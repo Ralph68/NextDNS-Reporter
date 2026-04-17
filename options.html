@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NextDNS Reporter — Paramètres</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0a1628; --surface:#0f2135; --surface2:#152840; --surface3:#1a3050;
+  --border:rgba(255,255,255,0.08); --text:#e2e8f0;
+  --muted:rgba(255,255,255,0.5); --hint:rgba(255,255,255,0.28);
+  --blue:#1a56db; --blue-l:#4f87e8; --green:#0e9f6e;
+  --amber:#f59e0b; --red:#ef4444;
+}
+body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; font-size:14px; line-height:1.6; min-height:100vh; }
+.layout { display:flex; min-height:100vh; }
+
+/* ── Sidebar ── */
+.sidebar { width:210px; background:var(--surface); flex:none; border-right:1px solid var(--border); padding:24px 0; position:sticky; top:0; height:100vh; overflow-y:auto; }
+.sidebar-brand { display:flex; align-items:center; gap:10px; padding:0 18px 18px; border-bottom:1px solid var(--border); margin-bottom:10px; }
+.brand-icon { width:32px; height:32px; background:var(--blue); border-radius:8px; display:flex; align-items:center; justify-content:center; flex:none; }
+.brand-name { font-size:14px; font-weight:600; }
+.brand-ver  { font-size:11px; color:var(--hint); }
+.nav-item { display:flex; align-items:center; gap:10px; padding:9px 18px; font-size:13px; color:var(--muted); cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:inherit; transition:background .12s,color .12s; }
+.nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+.nav-item.active { color:#93b8f8; background:rgba(79,135,232,.12); font-weight:500; }
+.nav-item svg { flex:none; }
+
+/* ── Main ── */
+.main { flex:1; padding:36px 44px; max-width:760px; }
+.page { display:none; }
+.page.active { display:block; }
+.page-title { font-size:22px; font-weight:600; margin-bottom:4px; }
+.page-desc  { font-size:13px; color:var(--muted); margin-bottom:28px; }
+
+/* ── Cards ── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px 22px; margin-bottom:16px; }
+.card-title { font-size:14px; font-weight:600; margin-bottom:4px; }
+.card-desc  { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+
+label.fl { display:block; font-size:12px; font-weight:600; color:var(--hint); margin-bottom:5px; }
+input[type=text],input[type=url],input[type=email] { width:100%; padding:9px 12px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; font-family:inherit; outline:none; transition:border-color .12s; }
+input:focus { border-color:rgba(255,255,255,.3); }
+input::placeholder { color:var(--hint); }
+.field-group { margin-bottom:14px; }
+.field-hint { font-size:11px; color:var(--hint); margin-top:5px; }
+
+.toggle-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.toggle-text .tl { font-size:13px; font-weight:500; }
+.toggle-text .td { font-size:11px; color:var(--muted); margin-top:2px; }
+.toggle { position:relative; flex:none; width:40px; height:22px; }
+.toggle input { opacity:0; width:0; height:0; }
+.track { position:absolute; inset:0; background:rgba(255,255,255,.12); border-radius:11px; cursor:pointer; transition:background .2s; }
+.track::after { content:""; position:absolute; left:3px; top:3px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.toggle input:checked + .track { background:var(--blue); }
+.toggle input:checked + .track::after { transform:translateX(18px); }
+
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--text); transition:background .15s; }
+.btn:hover { background:rgba(255,255,255,.1); }
+.btn-primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.btn-primary:hover { background:#1e40af; }
+.btn-danger { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.25); color:#fca5a5; }
+.btn-danger:hover { background:rgba(239,68,68,.22); }
+.btn-row { display:flex; gap:10px; margin-top:14px; }
+.confirm-msg { font-size:12px; margin-top:8px; min-height:14px; }
+
+.badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:500; }
+.badge-green { background:rgba(14,159,110,.18); color:#6ee7b7; }
+.badge-amber { background:rgba(245,158,11,.18); color:#fcd34d; }
+.badge-red   { background:rgba(239,68,68,.18);  color:#fca5a5; }
+
+/* ── Historique ── */
+.history-list { display:flex; flex-direction:column; gap:8px; }
+.history-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.history-domain { font-size:13px; font-weight:500; }
+.history-time   { font-size:11px; color:var(--hint); white-space:nowrap; }
+.empty-state    { font-size:13px; color:var(--hint); text-align:center; padding:32px 0; }
+
+/* ── Aide ── */
+.help-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; margin-bottom:32px; }
+.hcard { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+.hcard-icon  { font-size:22px; margin-bottom:10px; }
+.hcard-title { font-size:14px; font-weight:600; margin-bottom:8px; }
+.hcard-body  { font-size:13px; color:var(--muted); line-height:1.75; }
+.hcard-body code { background:rgba(255,255,255,.07); padding:1px 5px; border-radius:4px; font-size:12px; color:#93b8f8; }
+.hcard-body a    { color:var(--blue-l); }
+.hcard-body kbd  { background:rgba(255,255,255,.1); padding:1px 6px; border-radius:3px; font-size:11px; font-family:monospace; }
+.hcard-body strong { color:var(--text); font-weight:600; }
+
+.section-divider { font-size:15px; font-weight:600; margin:32px 0 16px; color:var(--text); display:flex; align-items:center; gap:10px; }
+.section-divider::after { content:""; flex:1; height:1px; background:var(--border); }
+
+/* Données / privacy */
+.priv-item { display:flex; gap:14px; margin-bottom:20px; align-items:flex-start; }
+.priv-icon { font-size:20px; flex:none; margin-top:2px; width:28px; text-align:center; }
+.priv-label { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.priv-body  { font-size:13px; color:var(--muted); line-height:1.7; }
+.priv-body code { background:rgba(255,255,255,.07); padding:1px 5px; border-radius:4px; font-size:12px; color:#93b8f8; }
+.priv-body a { color:var(--blue-l); }
+
+/* Tableau données */
+.data-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
+.data-table th { text-align:left; font-size:11px; font-weight:600; color:var(--hint); padding:6px 10px; border-bottom:1px solid var(--border); }
+.data-table td { padding:8px 10px; color:var(--muted); border-bottom:1px solid rgba(255,255,255,.04); vertical-align:top; }
+.data-table td:first-child { color:var(--text); font-weight:500; white-space:nowrap; }
+.data-table tr:last-child td { border-bottom:none; }
+
+/* Crédits */
+.credit-block { display:flex; gap:14px; margin-bottom:18px; align-items:flex-start; }
+.credit-avatar { width:42px; height:42px; background:var(--surface2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex:none; font-size:16px; }
+.credit-name { font-size:14px; font-weight:500; }
+.credit-role { font-size:12px; color:var(--muted); margin-top:2px; }
+.credit-link { font-size:12px; color:var(--blue-l); text-decoration:none; margin-top:4px; display:inline-block; }
+.credit-link:hover { text-decoration:underline; }
+.oss-row { display:flex; gap:12px; align-items:flex-start; margin-bottom:14px; }
+.oss-icon { font-size:18px; flex:none; width:24px; text-align:center; margin-top:2px; }
+.oss-name { font-size:13px; font-weight:500; }
+.oss-desc { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.6; }
+.oss-desc a { color:var(--blue-l); }
+.pill { display:inline-block; background:rgba(79,135,232,.14); color:#93b8f8; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:7px; font-weight:500; vertical-align:middle; }
+.license-box { background:rgba(255,255,255,.03); border-radius:8px; padding:14px; font-size:11px; color:var(--muted); font-family:monospace; line-height:1.9; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+      </svg>
+    </div>
+    <div><div class="brand-name">DNS Reporter</div><div class="brand-ver" id="opt-version">v1.3.0</div></div>
+  </div>
+  <button class="nav-item active" data-page="settings">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Paramètres
+  </button>
+  <button class="nav-item" data-page="history">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Historique
+  </button>
+  <button class="nav-item" data-page="help">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Aide
+  </button>
+  <button class="nav-item" data-page="privacy">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Confidentialité
+  </button>
+  <button class="nav-item" data-page="credits">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Crédits
+  </button>
+</nav>
+
+<main class="main">
+
+<!-- ════════════ PARAMÈTRES ════════════ -->
+<div class="page active" id="page-settings">
+  <div class="page-title">Paramètres</div>
+  <div class="page-desc">Configuration de l'extension NextDNS Reporter.</div>
+
+  <div class="card">
+    <div class="card-title">Endpoint Formspree</div>
+    <div class="card-desc">
+      Les signalements sont envoyés via <a href="https://formspree.io" target="_blank" style="color:#4f87e8">Formspree</a>,
+      un service tiers gratuit. Créez un formulaire, puis copiez l'URL ou l'identifiant ci-dessous.
+      Sans endpoint configuré, les envois sont désactivés.
+    </div>
+    <div class="field-group">
+      <label class="fl" for="opt-ep">URL ou identifiant Formspree</label>
+      <input type="url" id="opt-ep" placeholder="https://formspree.io/f/xxxxxxxx" spellcheck="false" autocomplete="off"/>
+      <p class="field-hint">Accepte l'URL complète ou l'identifiant seul (ex : <code style="color:#93b8f8;font-size:11px">abcd1234</code>).</p>
+      <div id="ep-status" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Identité par défaut</div>
+    <div class="card-desc">
+      Ces coordonnées sont pré-remplies automatiquement dans le formulaire.
+      L'email est obligatoire — il permet à l'administrateur de vous répondre.
+      Le prénom est facultatif mais utile pour personnaliser les échanges.
+    </div>
+    <div class="field-group">
+      <label class="fl" for="opt-email">Email <span style="color:#f87171">*</span></label>
+      <input type="email" id="opt-email" placeholder="votre@email.com" autocomplete="email"/>
+    </div>
+    <div class="field-group">
+      <label class="fl" for="opt-name">Prénom <span style="font-weight:400;color:var(--hint)">(facultatif)</span></label>
+      <input type="text" id="opt-name" placeholder="Votre prénom" maxlength="60" autocomplete="given-name"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mode one-click</div>
+    <div class="card-desc">
+      En mode one-click, un seul clic sur le bouton envoie immédiatement le signalement
+      sans ouvrir le formulaire. Nécessite qu'un email soit mémorisé ci-dessus.
+      Le signalement contient uniquement les informations techniques — pas de contexte ni de commentaire.
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-text">
+        <div class="tl">Activer le mode one-click</div>
+        <div class="td">Un clic = envoi immédiat, sans formulaire</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="opt-oneclic"/><span class="track"></span></label>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="opt-save">Enregistrer les paramètres</button>
+  </div>
+  <div class="confirm-msg" id="opt-confirm"></div>
+</div>
+
+<!-- ════════════ HISTORIQUE ════════════ -->
+<div class="page" id="page-history">
+  <div class="page-title">Historique</div>
+  <div class="page-desc">
+    Les 30 derniers signalements envoyés depuis ce navigateur.
+    Un même domaine ne peut pas être re-signalé avant 48 heures.
+  </div>
+  <div id="history-list" class="history-list"></div>
+  <div class="btn-row" style="margin-top:20px">
+    <button class="btn btn-danger" id="clear-history">Effacer l'historique</button>
+  </div>
+  <div class="confirm-msg" id="history-confirm"></div>
+</div>
+
+<!-- ════════════ AIDE ════════════ -->
+<div class="page" id="page-help">
+  <div class="page-title">Aide</div>
+  <div class="page-desc">Tout ce qu'il faut savoir pour utiliser NextDNS Reporter efficacement.</div>
+
+  <div class="help-grid">
+
+    <div class="hcard">
+      <div class="hcard-icon">🔵</div>
+      <div class="hcard-title">Comment signaler un blocage ?</div>
+      <div class="hcard-body">
+        Quand NextDNS bloque un site, une page sombre s'affiche avec le message
+        <strong>"[nom du site] est bloqué"</strong>. L'extension la détecte automatiquement
+        et affiche un bouton bleu centré en bas : <strong>Demander le déblocage</strong>.<br><br>
+        Remplissez votre email (obligatoire), ajoutez un contexte si utile, puis cliquez
+        sur <strong>Envoyer la demande</strong>. L'administrateur reçoit immédiatement un email.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">⚡</div>
+      <div class="hcard-title">Mode one-click</div>
+      <div class="hcard-body">
+        Activable dans Paramètres. En mode one-click, un seul clic sur le bouton
+        envoie directement le signalement — le formulaire ne s'affiche pas.<br><br>
+        Nécessite qu'un email soit mémorisé. Le signalement ne contiendra pas de contexte
+        ni de commentaire, mais il sera envoyé instantanément. Idéal si vous signalez souvent.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">⏳</div>
+      <div class="hcard-title">Déjà signalé — que faire ?</div>
+      <div class="hcard-body">
+        Pour éviter les doublons, l'extension bloque un nouveau signalement pour le
+        même domaine pendant <strong>48 heures</strong>. Le bouton affiche alors
+        <strong>"⏳ Déjà signalé"</strong>.<br><br>
+        Si votre demande est urgente, contactez directement l'administrateur par email.
+        L'historique complet est disponible dans l'onglet Historique.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">✅</div>
+      <div class="hcard-title">Le site a été débloqué ?</div>
+      <div class="hcard-body">
+        Après envoi, un bouton <strong>Rafraîchir la page</strong> apparaît dans le formulaire.
+        Cliquez dessus — il vide le cache navigateur et recharge.<br><br>
+        Si la page est toujours bloquée après rechargement, essayez
+        <kbd>Ctrl+Shift+R</kbd> (Windows) ou <kbd>Cmd+Shift+R</kbd> (Mac).
+        Le cache DNS local peut prendre quelques minutes à expirer.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">📧</div>
+      <div class="hcard-title">Les emails arrivent dans les spams ?</div>
+      <div class="hcard-body">
+        C'est un comportement courant avec les nouveaux expéditeurs automatiques.<br><br>
+        Pour y remédier : ouvrez votre boîte de réception, trouvez le premier email reçu
+        via Formspree, cliquez sur <strong>"Ce n'est pas un spam"</strong> et ajoutez
+        l'expéditeur à vos contacts. Les emails suivants arriveront en boîte principale.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">🔧</div>
+      <div class="hcard-title">Le bouton n'apparaît pas ?</div>
+      <div class="hcard-body">
+        Vérifiez que l'extension est bien activée dans
+        <code>chrome://extensions</code> et que le mode développeur est ON.<br><br>
+        Si le bouton était présent avant et a disparu suite à une mise à jour de NextDNS,
+        la détection peut être affectée. Ouvrez <kbd>F12</kbd> → Elements sur la page
+        bloquée et vérifiez que <code>#titleText</code> et <code>#nextdnsLogoGradient</code>
+        existent toujours. Signalez le problème sur
+        <a href="https://github.com/Ralph68/NextDNS-Reporter/issues" target="_blank">GitHub</a>.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">🔄</div>
+      <div class="hcard-title">Comment mettre à jour l'extension ?</div>
+      <div class="hcard-body">
+        Remplacez les fichiers dans le dossier source (là où vous l'avez installé),
+        puis ouvrez <code>chrome://extensions</code> et cliquez sur
+        <strong>↺ Recharger</strong> sur la carte NextDNS Reporter.<br><br>
+        Vos paramètres (email, prénom, endpoint) sont conservés — ils sont stockés
+        séparément dans le navigateur, pas dans les fichiers de l'extension.
+      </div>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-icon">💬</div>
+      <div class="hcard-title">Signaler un bug ou proposer une amélioration</div>
+      <div class="hcard-body">
+        Le projet est open source. Pour signaler un bug ou suggérer une fonctionnalité,
+        ouvrez une issue sur GitHub :<br><br>
+        <a href="https://github.com/Ralph68/NextDNS-Reporter/issues" target="_blank">
+          github.com/Ralph68/NextDNS-Reporter/issues
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════ CONFIDENTIALITÉ ════════════ -->
+<div class="page" id="page-privacy">
+  <div class="page-title">Confidentialité</div>
+  <div class="page-desc">Ce que l'extension fait — et ne fait pas — avec vos données.</div>
+
+  <div class="section-divider">Ce que l'extension ne fait jamais</div>
+
+  <div class="priv-item">
+    <div class="priv-icon">🚫</div>
+    <div>
+      <div class="priv-label">Aucune collecte sur les pages normales</div>
+      <div class="priv-body">
+        Le script s'injecte sur toutes les pages par nécessité technique, mais il s'arrête
+        immédiatement à la première ligne si la page n'est pas une page de blocage NextDNS.
+        Il ne lit rien, n'écoute rien, ne transmet rien pendant votre navigation habituelle.
+        Vous pouvez vérifier cela directement dans le code source (fichier <code>content.js</code>,
+        section 1 — Détection).
+      </div>
+    </div>
+  </div>
+
+  <div class="priv-item">
+    <div class="priv-icon">🚫</div>
+    <div>
+      <div class="priv-label">Aucun tracking, aucune télémétrie</div>
+      <div class="priv-body">
+        L'extension ne contient aucun outil d'analyse, de statistiques d'usage, de
+        reporting vers un serveur central, ni aucune dépendance externe. Le code est
+        intégralement en Vanilla JS — aucune librairie tierce n'est chargée.
+      </div>
+    </div>
+  </div>
+
+  <div class="priv-item">
+    <div class="priv-icon">🚫</div>
+    <div>
+      <div class="priv-label">Aucun envoi automatique en arrière-plan</div>
+      <div class="priv-body">
+        Les données ne sont envoyées que lorsque vous cliquez explicitement sur
+        <strong>Envoyer la demande</strong>. Jamais en arrière-plan, jamais sans votre action.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">Ce qui est envoyé lors d'un signalement</div>
+
+  <div class="priv-body" style="margin-bottom:14px">
+    Lorsque vous envoyez une demande, les informations suivantes sont transmises à
+    l'endpoint Formspree configuré par l'administrateur réseau :
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Donnée</th><th>Source</th><th>Pourquoi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Adresse email</td><td>Saisie par vous</td><td>Permettre à l'admin de vous répondre</td></tr>
+      <tr><td>Prénom</td><td>Saisie par vous</td><td>Personnaliser la réponse (facultatif)</td></tr>
+      <tr><td>Domaine bloqué</td><td>Titre de la page</td><td>Identifier ce qui doit être débloqué</td></tr>
+      <tr><td>URL complète</td><td>Barre d'adresse</td><td>Contexte exact de la demande</td></tr>
+      <tr><td>Source / referrer</td><td>Page précédente</td><td>D'où vient le lien (email, recherche…)</td></tr>
+      <tr><td>Motif de blocage</td><td>DOM NextDNS</td><td>Quelle liste a déclenché le blocage</td></tr>
+      <tr><td>Contexte sélectionné</td><td>Votre choix</td><td>Catégoriser la demande</td></tr>
+      <tr><td>Commentaire</td><td>Saisie par vous</td><td>Explication libre (facultatif)</td></tr>
+      <tr><td>Système & navigateur</td><td>User-agent</td><td>Diagnostic technique</td></tr>
+      <tr><td>Date et heure</td><td>Horloge navigateur</td><td>Horodatage</td></tr>
+      <tr><td>User-Agent complet</td><td>Navigateur</td><td>Diagnostic avancé si besoin</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-divider">Ce qui est stocké localement</div>
+
+  <div class="priv-body" style="margin-bottom:14px">
+    L'extension stocke ces données dans <code>chrome.storage.local</code>,
+    c'est-à-dire uniquement sur votre appareil. Ces données ne quittent jamais
+    votre navigateur, sauf lors d'un signalement explicite (voir tableau ci-dessus).
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Clé</th><th>Contenu</th><th>Durée</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ndns_endpoint</td><td>URL Formspree configurée</td><td>Jusqu'à modification</td></tr>
+      <tr><td>ndns_email</td><td>Email mémorisé</td><td>Jusqu'à effacement</td></tr>
+      <tr><td>ndns_username</td><td>Prénom mémorisé</td><td>Jusqu'à effacement</td></tr>
+      <tr><td>ndns_oneclic</td><td>Préférence mode one-click</td><td>Jusqu'à modification</td></tr>
+      <tr><td>ndns_reported</td><td>Domaines signalés + horodatage (30 max)</td><td>Glissant, effaçable</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:20px">
+    <div class="priv-item">
+      <div class="priv-icon">⚠️</div>
+      <div>
+        <div class="priv-label">Les signalements transitent par Formspree</div>
+        <div class="priv-body">
+          Formspree est un service tiers américain (San Francisco).
+          Les données envoyées lors d'un signalement sont traitées par leurs serveurs
+          avant d'être transmises à l'adresse email de l'administrateur.
+          La politique de confidentialité de Formspree s'applique à ces données :
+          <a href="https://formspree.io/legal/privacy-policy" target="_blank">formspree.io/legal/privacy-policy</a>.<br><br>
+          Aucune donnée n'est envoyée à Formspree sans votre action explicite.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">Vos droits</div>
+
+  <div class="priv-body">
+    À tout moment, vous pouvez :<br><br>
+    • <strong>Consulter</strong> l'historique des signalements : onglet Historique ci-dessus.<br>
+    • <strong>Effacer</strong> l'historique : bouton "Effacer l'historique" dans l'onglet Historique.<br>
+    • <strong>Modifier ou supprimer</strong> l'email et le prénom mémorisés : onglet Paramètres.<br>
+    • <strong>Désinstaller</strong> l'extension : supprime automatiquement toutes les données locales.<br><br>
+    Pour toute question :
+    <a href="https://github.com/Ralph68/NextDNS-Reporter/issues" target="_blank">github.com/Ralph68/NextDNS-Reporter/issues</a>
+  </div>
+</div>
+
+<!-- ════════════ CRÉDITS ════════════ -->
+<div class="page" id="page-credits">
+  <div class="page-title">Crédits</div>
+  <div class="page-desc">Auteurs, licence et composants tiers utilisés dans cette extension.</div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px">Auteurs</div>
+    <div class="credit-block">
+      <div class="credit-avatar">👤</div>
+      <div>
+        <div class="credit-name">Jean-Thomas Runser</div>
+        <div class="credit-role">Auteur & product owner — conception fonctionnelle</div>
+        <div class="credit-role">Responsable Achats & Logistique — Guldagil (Rixheim)</div>
+      </div>
+    </div>
+    <div class="credit-block">
+      <div class="credit-avatar" style="font-size:13px;letter-spacing:-1px;font-weight:700">AI</div>
+      <div>
+        <div class="credit-name">Claude <span style="font-weight:400;color:var(--muted)">(Anthropic)</span></div>
+        <div class="credit-role">Développement du code source — HTML, CSS, JavaScript</div>
+        <a href="https://anthropic.com" target="_blank" class="credit-link">anthropic.com →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">Services & composants tiers</div>
+    <div class="oss-row">
+      <div class="oss-icon">🛡️</div>
+      <div>
+        <div class="oss-name">NextDNS <span class="pill">Service</span></div>
+        <div class="oss-desc">Filtrage DNS. La page de blocage et l'API <code style="font-size:11px;color:#93b8f8">api.nextdns.io/reasons</code> sont utilisées en lecture seule, uniquement sur les pages de blocage. <a href="https://nextdns.io/privacy" target="_blank">Politique de confidentialité →</a></div>
+      </div>
+    </div>
+    <div class="oss-row" style="margin-top:12px">
+      <div class="oss-icon">📬</div>
+      <div>
+        <div class="oss-name">Formspree <span class="pill">Service</span></div>
+        <div class="oss-desc">Transmission des signalements par email. Plan gratuit : 50 soumissions/mois. <a href="https://formspree.io/legal/privacy-policy" target="_blank">Politique de confidentialité →</a></div>
+      </div>
+    </div>
+    <div class="oss-row" style="margin-top:12px">
+      <div class="oss-icon">🧩</div>
+      <div>
+        <div class="oss-name">Chrome Extensions API / Firefox WebExtensions API <span class="pill">Plateforme</span></div>
+        <div class="oss-desc">APIs natives des navigateurs. Aucune librairie JavaScript tierce — code 100% Vanilla JS, zéro dépendance npm.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:8px">Licence MIT</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+      Ce projet est open source, distribué sous licence MIT.
+      <a href="https://github.com/Ralph68/NextDNS-Reporter" target="_blank" style="color:var(--blue-l)">Voir le code source →</a>
+    </div>
+    <div class="license-box">
+      Copyright (c) 2026 Jean-Thomas Runser<br><br>
+      Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>
+      The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+<script src="options.js"></script>
+</body>
+</html>
