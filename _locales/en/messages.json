@@ -1,0 +1,5 @@
+{
+  "extName":        { "message": "NextDNS Reporter" },
+  "extShortName":   { "message": "DNS Reporter" },
+  "extDescription": { "message": "Request unblocking of a website blocked by NextDNS in one click." }
+}
