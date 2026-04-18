@@ -30,13 +30,19 @@ chrome.storage.local.get(["ndns_endpoint", "ndns_email", "ndns_username", "ndns_
 });
 
 function validateEp(v) {
+  epStatus.textContent = "";
+  const span = document.createElement("span");
   if (!v) {
-    epStatus.innerHTML = `<span class="badge badge-red">✕ Non configuré — les envois sont désactivés</span>`;
+    span.className = "badge badge-red";
+    span.textContent = "✕ Non configuré — les envois sont désactivés";
   } else if (v.includes("formspree.io/f/")) {
-    epStatus.innerHTML = `<span class="badge badge-green">✓ Endpoint valide</span>`;
+    span.className = "badge badge-green";
+    span.textContent = "✓ Endpoint valide";
   } else {
-    epStatus.innerHTML = `<span class="badge badge-amber">⚠ Format inattendu</span>`;
+    span.className = "badge badge-amber";
+    span.textContent = "⚠ Format inattendu";
   }
+  epStatus.appendChild(span);
 }
 epInput.addEventListener("input", () => validateEp(epInput.value));
 
@@ -65,28 +71,52 @@ function renderHistory() {
     const container = document.getElementById("history-list");
     const map = data.ndns_reported || {};
     const entries = Object.entries(map).sort((a,b) => b[1].ts - a[1].ts);
+    container.textContent = "";
 
     if (!entries.length) {
-      container.innerHTML = `<div class="empty-state">Aucun signalement dans l'historique.</div>`;
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "Aucun signalement dans l'historique.";
+      container.appendChild(empty);
       return;
     }
 
-    container.innerHTML = entries.map(([domain, entry]) => {
+    entries.forEach(([domain, entry]) => {
       const date = new Date(entry.ts).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
       const elapsed = Date.now() - entry.ts;
       const hoursLeft = Math.max(0, Math.ceil((48*3600*1000 - elapsed) / 3600000));
-      const badge = hoursLeft > 0
-        ? `<span class="badge badge-amber">${hoursLeft}h avant de pouvoir re-signaler</span>`
-        : `<span class="badge badge-green">Nouveau signalement possible</span>`;
-      return `
-        <div class="history-item">
-          <div>
-            <div class="history-domain">${esc(domain)}</div>
-            <div class="history-meta" style="margin-top:4px">${badge}</div>
-          </div>
-          <div class="history-time">${date}</div>
-        </div>`;
-    }).join("");
+
+      const item = document.createElement("div");
+      item.className = "history-item";
+
+      const left = document.createElement("div");
+
+      const domEl = document.createElement("div");
+      domEl.className = "history-domain";
+      domEl.textContent = domain; // textContent — pas d'injection possible
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "history-meta";
+      metaEl.style.marginTop = "4px";
+
+      const badge = document.createElement("span");
+      badge.className = hoursLeft > 0 ? "badge badge-amber" : "badge badge-green";
+      badge.textContent = hoursLeft > 0
+        ? hoursLeft + "h avant de pouvoir re-signaler"
+        : "Nouveau signalement possible";
+
+      metaEl.appendChild(badge);
+      left.appendChild(domEl);
+      left.appendChild(metaEl);
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "history-time";
+      timeEl.textContent = date;
+
+      item.appendChild(left);
+      item.appendChild(timeEl);
+      container.appendChild(item);
+    });
   });
 }
 
