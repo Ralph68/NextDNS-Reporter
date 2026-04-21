@@ -2,7 +2,7 @@
 
 > Extension Chrome & Firefox — Demandez le déblocage d'un site bloqué par NextDNS en un clic.
 
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox-orange)
 ![Vanilla JS](https://img.shields.io/badge/code-Vanilla%20JS-yellow)
