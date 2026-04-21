@@ -118,7 +118,7 @@ You can at any time:
 ## Contact
 
 For questions about this privacy policy:
-- GitHub: https://github.com/Ralph68/NextDNS-Reporter/issues
+- GitHub: https://github.com/jeantoroot/NextDNS-Reporter/issues
 - Email: contact.runser68@gmail.com
 
 ---

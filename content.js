@@ -1,6 +1,6 @@
 /* NextDNS Reporter — content.js — v1.3.0
  * © 2026 Jean-Thomas Runser. MIT License.
- * https://github.com/jt-runser/nextdns-reporter
+ * https://github.com/jeantoroot/NextDNS-Reporter
  *
  * Ce script s'injecte sur toutes les pages mais s'arrête immédiatement
  * si la page n'est pas une page de blocage NextDNS.

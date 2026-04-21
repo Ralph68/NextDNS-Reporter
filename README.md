@@ -85,24 +85,13 @@ Le plan gratuit Formspree permet 50 soumissions/mois — largement suffisant pou
 
 ---
 
-### Firefox — Mode temporaire (simple)
+### Firefox
 
-> L'extension disparaît au redémarrage. Idéal pour tester.
+L'extension est disponible sur Firefox Add-ons (AMO) :
 
-1. Ouvrez `about:debugging` → **Ce Firefox**
-2. Cliquez sur **Charger un module temporaire**
-3. Sélectionnez le fichier `manifest.json` dans le dossier de l'extension
+**[Installer NextDNS Reporter pour Firefox →](https://addons.mozilla.org/fr/firefox/addon/nextdns-reporter/)**
 
----
-
-### Firefox — Mode permanent (Firefox Developer Edition)
-
-1. Téléchargez [Firefox Developer Edition](https://www.mozilla.org/fr/firefox/developer/)
-   (coexiste avec Firefox normal, aucun remplacement)
-2. Dans `about:config` → passer `xpinstall.signatures.required` à `false`
-3. Créez un ZIP du contenu du dossier (**les fichiers directement**, pas le dossier parent)
-4. Dans Firefox Dev Edition → `about:addons` → ⚙ → **Installer un module depuis un fichier**
-5. Sélectionnez le ZIP
+Compatible avec Firefox 140 et versions ultérieures.
 
 ---
 
@@ -186,7 +175,7 @@ Voir [PRIVACY.md](PRIVACY.md) pour la politique complète.
 **La détection ne fonctionne plus**
 → NextDNS a peut-être mis à jour sa page de blocage. Ouvrez F12 → Elements sur la page
 et vérifiez que `#titleText` et `#nextdnsLogoGradient` existent toujours.
-[Ouvrez une issue](https://github.com/Ralph68/NextDNS-Reporter/issues) si c'est le cas.
+[Ouvrez une issue](https://github.com/jeantoroot/NextDNS-Reporter/issues) si c'est le cas.
 
 **L'envoi échoue**
 → Vérifiez l'endpoint dans le popup. Vérifiez la limite mensuelle sur
@@ -212,7 +201,7 @@ Les contributions sont bienvenues. Ouvrez une issue avant de soumettre une PR.
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/Ralph68/NextDNS-Reporter.git
+git clone https://github.com/jeantoroot/NextDNS-Reporter.git
 
 # Charger dans Chrome pour tester
 # chrome://extensions → Mode développeur → Charger l'extension non empaquetée → dossier cloné

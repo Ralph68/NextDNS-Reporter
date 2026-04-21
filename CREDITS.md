@@ -3,7 +3,6 @@
 ## Authors
 
 **Jean-Thomas Runser** — Author, product owner, functional design  
-Responsable Achats & Logistique — Guldagil  
 contact.runser68@gmail.com
 
 **Claude (Anthropic)** — Source code development (HTML, CSS, JavaScript)  
@@ -23,4 +22,4 @@ in pure Vanilla JS with no npm dependencies.
 
 ## Repository
 
-https://github.com/Ralph68/NextDNS-Reporter
+https://github.com/jeantoroot/NextDNS-Reporter
