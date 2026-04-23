@@ -51,3 +51,10 @@ saveBtn.addEventListener("click", () => {
 
 epInput.addEventListener("keydown", e => { if (e.key === "Enter") saveBtn.click(); });
 optionsLink.addEventListener("click", e => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
+
+if (/Android/i.test(navigator.userAgent)) {
+  document.getElementById("android-banner").style.display = "block";
+}
+document.getElementById("open-options-btn").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});

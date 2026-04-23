@@ -120,6 +120,39 @@ input::placeholder { color:var(--hint); }
 .oss-desc a { color:var(--blue-l); }
 .pill { display:inline-block; background:rgba(79,135,232,.14); color:#93b8f8; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:7px; font-weight:500; vertical-align:middle; }
 .license-box { background:rgba(255,255,255,.03); border-radius:8px; padding:14px; font-size:11px; color:var(--muted); font-family:monospace; line-height:1.9; margin-top:10px; }
+
+/* ── Responsive mobile (< 640px) ── */
+@media (max-width: 640px) {
+  .layout { flex-direction: column; }
+
+  .sidebar {
+    width: 100%; height: auto;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; flex-direction: row; flex-wrap: nowrap;
+    overflow-x: auto; overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    padding: 0; border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand { display: none; }
+  .nav-item {
+    flex: none; padding: 10px 14px;
+    white-space: nowrap; font-size: 12px;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-item.active {
+    border-bottom-color: var(--blue-l);
+    background: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.04); }
+
+  .main { padding: 20px 16px; max-width: 100%; }
+  .card { padding: 16px; }
+  .help-grid { grid-template-columns: 1fr; }
+
+  .data-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 480px; }
+}
 </style>
 </head>
 <body>
@@ -389,6 +422,7 @@ input::placeholder { color:var(--hint); }
     l'endpoint Formspree configuré par l'administrateur réseau :
   </div>
 
+  <div class="data-table-wrap">
   <table class="data-table">
     <thead>
       <tr><th>Donnée</th><th>Source</th><th>Pourquoi</th></tr>
@@ -407,6 +441,7 @@ input::placeholder { color:var(--hint); }
       <tr><td>User-Agent complet</td><td>Navigateur</td><td>Diagnostic avancé si besoin</td></tr>
     </tbody>
   </table>
+  </div>
 
   <div class="section-divider">Ce qui est stocké localement</div>
 
@@ -416,6 +451,7 @@ input::placeholder { color:var(--hint); }
     votre navigateur, sauf lors d'un signalement explicite (voir tableau ci-dessus).
   </div>
 
+  <div class="data-table-wrap">
   <table class="data-table">
     <thead>
       <tr><th>Clé</th><th>Contenu</th><th>Durée</th></tr>
@@ -428,6 +464,7 @@ input::placeholder { color:var(--hint); }
       <tr><td>ndns_reported</td><td>Domaines signalés + horodatage (30 max)</td><td>Glissant, effaçable</td></tr>
     </tbody>
   </table>
+  </div>
 
   <div style="margin-top:20px">
     <div class="priv-item">

@@ -1,7 +1,7 @@
 # Privacy Policy — NextDNS Reporter
 
 **Last updated:** April 2026  
-**Extension version:** 1.1.0  
+**Extension version:** 1.4.0  
 **Author:** Jean-Thomas Runser
 
 ---
