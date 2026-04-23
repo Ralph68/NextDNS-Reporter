@@ -127,6 +127,7 @@
       display: flex; align-items: center; gap: 10px;
       font-family: system-ui,-apple-system,sans-serif;
       white-space: nowrap; transition: background 0.15s, opacity 0.15s;
+      min-height: 48px; min-width: 0;
     }
     #ndns-fab:hover:not(:disabled) { background: #1e40af; }
     #ndns-fab:disabled { opacity: 0.7; cursor: default; }
@@ -152,15 +153,18 @@
       background: #0f2537; border: 1px solid rgba(255,255,255,0.13);
       border-radius: 16px; padding: 24px 26px 22px;
       width: min(480px, 94vw); color: #fff; position: relative;
-      max-height: 92vh; overflow-y: auto;
+      max-height: 85vh; max-height: 85dvh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
     }
 
     #ndns-close {
       position: absolute; top: 12px; right: 14px;
       background: none; border: none; color: rgba(255,255,255,0.35);
-      font-size: 18px; cursor: pointer; padding: 4px 6px; line-height: 1;
+      font-size: 18px; cursor: pointer; line-height: 1;
       border-radius: 6px; transition: color 0.12s, background 0.12s;
+      min-width: 44px; min-height: 44px;
+      display: flex; align-items: center; justify-content: center; padding: 0;
     }
     #ndns-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
@@ -355,6 +359,24 @@
     #ndns-refresh-hint {
       font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 7px;
     }
+
+    @media (pointer: coarse), (max-width: 600px) {
+      #ndns-fab {
+        font-size: 16px; padding: 13px 24px; gap: 12px;
+      }
+      .ndns-input {
+        padding: 12px 14px;
+      }
+      textarea.ndns-input {
+        padding: 12px 14px;
+      }
+      .ndns-chip {
+        padding: 8px 14px;
+      }
+      #ndns-send-btn {
+        padding: 16px;
+      }
+    }
   `;
   document.head.appendChild(style);
 
@@ -536,7 +558,22 @@
   const nameErr        = document.getElementById("ndns-name-err");
   const commentErr     = document.getElementById("ndns-comment-err");
 
-  // ─── 11. FOCUS TRAP ─────────────────────────────────────────────────────────
+  // ─── 11. CLAVIER VIRTUEL (visualViewport) ───────────────────────────────────
+  function onViewportResize() {
+    if (!overlay.classList.contains("ndns-visible")) return;
+    const card = document.getElementById("ndns-card");
+    if (!card) return;
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    card.style.maxHeight = Math.floor(vh * 0.85) + "px";
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onViewportResize);
+  } else {
+    window.addEventListener("resize", onViewportResize);
+  }
+
+  // ─── 12. FOCUS TRAP ─────────────────────────────────────────────────────────
   const FOCUSABLE = 'button:not([disabled]),input,textarea,[tabindex]:not([tabindex="-1"])';
   function trapFocus(e) {
     if (!overlay.classList.contains("ndns-visible")) return;
@@ -653,6 +690,8 @@
   function closeModal() {
     overlay.classList.remove("ndns-visible");
     document.removeEventListener("keydown", trapFocus);
+    const card = document.getElementById("ndns-card");
+    if (card) card.style.maxHeight = "";
   }
 
   fab.addEventListener("click", async () => {

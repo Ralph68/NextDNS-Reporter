@@ -1,5 +1,19 @@
 # Changelog — NextDNS Reporter
 
+## [1.4.0] — 2026-04-23
+
+### Fixed
+- Suppression de la permission `identity` inutilisée (rejet Chrome Web Store,
+  référence Purple Potassium)
+
+### Changed
+- FAB et modale entièrement adaptés aux écrans tactiles (touch targets 48px,
+  dvh, visualViewport API pour le clavier virtuel)
+- Popup : banner d'information sur Firefox Android (popup non accessible)
+- Options : layout responsive en dessous de 640px (nav horizontale, 1 colonne)
+
+---
+
 ## [1.3.1] — 2026-04-18
 
 ### Changed

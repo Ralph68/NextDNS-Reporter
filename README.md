@@ -2,7 +2,7 @@
 
 > Extension Chrome & Firefox — Demandez le déblocage d'un site bloqué par NextDNS en un clic.
 
-![Version](https://img.shields.io/badge/version-1.3.1-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox-orange)
 ![Vanilla JS](https://img.shields.io/badge/code-Vanilla%20JS-yellow)
@@ -150,6 +150,8 @@ NextDNS-Reporter/
 - ✅ Bloc post-envoi avec bouton "Rafraîchir la page" (vide le cache)
 - ✅ Page Options : paramètres, historique, aide, confidentialité, crédits
 - ✅ Internationalisation FR / EN
+- ✅ Interface responsive mobile (Firefox Android)
+- ✅ Adaptation clavier virtuel (visualViewport API)
 - ✅ Compatible Chrome MV3 et Firefox (manifest `browser_specific_settings`)
 - ✅ Zéro dépendance externe — Vanilla JS pur
 
