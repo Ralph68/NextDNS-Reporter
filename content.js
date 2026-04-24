@@ -115,7 +115,89 @@
     return !DANGEROUS_RE.test(v);
   }
 
-  // ─── 8. STYLES ─────────────────────────────────────────────────────────────
+  // ─── 8. DIRECT ACCESS DETECTION ────────────────────────────────────────────
+
+  // Sous-domaines de redirection email/tracking courants
+  const REDIRECT_PARAMS = ["url", "u", "redirect", "target", "dest", "r", "link",
+                           "to", "href", "forward", "ref", "source", "returnUrl", "returnurl"];
+
+  // Domaines purement techniques (ESP, CDN) — jamais de contenu utilisateur
+  const TECHNICAL_DOMAINS = [
+    "sendgrid.net", "mailchimp.com", "bloomreach.com", "klaviyo.com",
+    "brevo.com", "sendinblue.com", "mailgun.org", "sparkpost.com",
+    "mandrillapp.com", "amazonaws.com", "cloudfront.net", "fastly.net"
+  ];
+
+  // Mots-clés indiquant qu'un domaine est un redirecteur/tracker
+  const SKIP_KEYWORDS_RE = /track|click|analytics|pixel|beacon/i;
+
+  // Patterns de sous-domaines typiques des redirecteurs email/marketing
+  const TRACKER_DOMAIN_RE = /^(?:click|track|link|go|r|redirect|em|links|t|url|lnk)\./i;
+
+  function normalizeHostname(hostname) {
+    return hostname.replace(/^www\./, "").toLowerCase();
+  }
+
+  function isTechnicalDomain(hostname) {
+    const h = normalizeHostname(hostname);
+    if (SKIP_KEYWORDS_RE.test(h)) return true;
+    return TECHNICAL_DOMAINS.some(td => h === td || h.endsWith("." + td));
+  }
+
+  function isRedirectLikeDomain(hostname) {
+    return TRACKER_DOMAIN_RE.test(hostname);
+  }
+
+  function extractCandidateUrlFromParams(rawUrl) {
+    let parsed;
+    try { parsed = new URL(rawUrl); }
+    catch { return null; }
+
+    for (const param of REDIRECT_PARAMS) {
+      const val = parsed.searchParams.get(param);
+      if (!val) continue;
+      let candidate;
+      try { candidate = new URL(val); }
+      catch {
+        // valeur peut être une URL relative ou encodée une fois de plus
+        try { candidate = new URL(decodeURIComponent(val)); }
+        catch { continue; }
+      }
+      if (candidate.protocol !== "https:" && candidate.protocol !== "http:") continue;
+      if (isTechnicalDomain(candidate.hostname)) continue;
+      return { url: candidate.href, hostname: normalizeHostname(candidate.hostname), source: "url-param" };
+    }
+    return null;
+  }
+
+  function getCandidateFromReferrer(referrer) {
+    if (!referrer) return null;
+    let parsed;
+    try { parsed = new URL(referrer); }
+    catch { return null; }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    const h = normalizeHostname(parsed.hostname);
+    if (isTechnicalDomain(h)) return null;
+    return { url: referrer, hostname: h, source: "referrer" };
+  }
+
+  function detectLegitimateTarget() {
+    const currentHostname = normalizeHostname(location.hostname);
+
+    // 1. Tester le referrer en premier — signal le plus fiable
+    const fromRef = getCandidateFromReferrer(document.referrer);
+    if (fromRef && fromRef.hostname !== currentHostname) return fromRef;
+
+    // 2. Si le domaine bloqué ressemble à un redirecteur, fouiller ses propres paramètres
+    if (isRedirectLikeDomain(location.hostname) || isTechnicalDomain(location.hostname)) {
+      const fromParam = extractCandidateUrlFromParams(location.href);
+      if (fromParam && fromParam.hostname !== currentHostname) return fromParam;
+    }
+
+    return null;
+  }
+
+  // ─── 9. STYLES ─────────────────────────────────────────────────────────────
   const style = document.createElement("style");
   style.textContent = `
     #ndns-fab {
@@ -380,7 +462,7 @@
   `;
   document.head.appendChild(style);
 
-  // ─── 9. DOM ─────────────────────────────────────────────────────────────────
+  // ─── 10. DOM ────────────────────────────────────────────────────────────────
   // Crée un tooltip expand/collapse au clic/clavier — compatible tactile, zéro :hover.
   let _tipCounter = 0;
   function makeTipWrap(tipText) {
@@ -673,7 +755,7 @@
   document.body.appendChild(fab);
   document.body.appendChild(overlay);
 
-  // ─── 10. REFS ───────────────────────────────────────────────────────────────
+  // ─── 11. REFS ───────────────────────────────────────────────────────────────
   const emailInput     = document.getElementById("ndns-email");
   const nameInput      = document.getElementById("ndns-name");
   const rememberChk    = document.getElementById("ndns-remember");
@@ -694,7 +776,7 @@
   const nameErr        = document.getElementById("ndns-name-err");
   const commentErr     = document.getElementById("ndns-comment-err");
 
-  // ─── 11. CLAVIER VIRTUEL (visualViewport) ───────────────────────────────────
+  // ─── 12. CLAVIER VIRTUEL (visualViewport) ───────────────────────────────────
   function onViewportResize() {
     if (!overlay.classList.contains("ndns-visible")) return;
     const card = document.getElementById("ndns-card");
@@ -709,7 +791,7 @@
     window.addEventListener("resize", onViewportResize);
   }
 
-  // ─── 12. FOCUS TRAP ─────────────────────────────────────────────────────────
+  // ─── 13. FOCUS TRAP ─────────────────────────────────────────────────────────
   const FOCUSABLE = 'button:not([disabled]),input,textarea,[tabindex]:not([tabindex="-1"])';
   function trapFocus(e) {
     if (!overlay.classList.contains("ndns-visible")) return;
@@ -723,7 +805,7 @@
     if (e.key === "Escape") closeModal();
   }
 
-  // ─── 12. CHAR COUNTER ───────────────────────────────────────────────────────
+  // ─── 14. CHAR COUNTER ───────────────────────────────────────────────────────
   commentArea.addEventListener("input", () => {
     const n = commentArea.value.length;
     charCount.textContent = `${n} / ${COMMENT_MAX_LEN}`;
@@ -731,7 +813,7 @@
       (n >= COMMENT_MAX_LEN ? " ndns-over" : n >= COMMENT_MAX_LEN * 0.85 ? " ndns-near" : "");
   });
 
-  // ─── 13. VALIDATION EN TEMPS RÉEL ───────────────────────────────────────────
+  // ─── 15. VALIDATION EN TEMPS RÉEL ───────────────────────────────────────────
   emailInput.addEventListener("blur", () => validateEmail(true));
   emailInput.addEventListener("input", () => {
     if (emailInput.classList.contains("ndns-error")) validateEmail(false);
@@ -766,7 +848,7 @@
     return true;
   }
 
-  // ─── 14. MÉMORISATION ───────────────────────────────────────────────────────
+  // ─── 16. MÉMORISATION ───────────────────────────────────────────────────────
   let toastTimer = null;
   function showToast(msg) {
     toastEl.textContent = msg;
@@ -784,7 +866,7 @@
     }
   }
 
-  // ─── 15. DÉTAILS TOGGLE ─────────────────────────────────────────────────────
+  // ─── 17. DÉTAILS TOGGLE ─────────────────────────────────────────────────────
   detailsToggle.addEventListener("click", () => {
     const open = detailsPanel.classList.toggle("ndns-open");
     detailsToggle.textContent = open ? "− Masquer les détails" : "+ Détails techniques";
@@ -794,7 +876,7 @@
     if (blockReason) { reasonVal.textContent = blockReason; reasonRow.style.display = "block"; }
   }, 1500);
 
-  // ─── 16. CHIPS ──────────────────────────────────────────────────────────────
+  // ─── 18. CHIPS ──────────────────────────────────────────────────────────────
   const selectedChips = new Set();
   document.getElementById("ndns-chips").querySelectorAll(".ndns-chip").forEach(chip => {
     chip.addEventListener("click", () => {
@@ -804,7 +886,7 @@
     });
   });
 
-  // ─── 17. OUVRIR / FERMER ────────────────────────────────────────────────────
+  // ─── 19. OUVRIR / FERMER ────────────────────────────────────────────────────
   async function openModal() {
     const already = await wasRecentlyReported(domain);
     if (already) {
@@ -871,7 +953,7 @@
     location.reload(true);
   });
 
-  // ─── 18. ENVOI ──────────────────────────────────────────────────────────────
+  // ─── 20. ENVOI ──────────────────────────────────────────────────────────────
   let sending = false;
 
   async function sendReport({ email, name, context, comment, endpoint }) {
