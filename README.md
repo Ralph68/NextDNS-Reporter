@@ -53,11 +53,26 @@ Envoi JSON → Formspree → Email administrateur
 | Contexte | Chips sélectionnés par l'utilisateur |
 | Commentaire | Texte libre (facultatif, max 300 car.) |
 | Système & navigateur | User-agent |
+| Version extension | `chrome.runtime.getManifest().version` |
+| Type appareil | User-agent (Desktop / Mobile) |
 | Date et heure | Horloge navigateur |
 
 ---
 
 ## Installation
+
+### Prérequis : certificat NextDNS
+
+Pour que NextDNS puisse bloquer les sites **sécurisés (HTTPS)** et afficher sa page de blocage,
+le certificat NextDNS doit être installé sur l'appareil. Sans lui, les sites bloqués en HTTPS
+affichent une erreur SSL standard et l'extension ne les détecte pas.
+
+→ Installer le certificat : **[nextdns.io/certificate](https://nextdns.io/certificate)**
+
+Ce prérequis est présenté lors du guide de démarrage (onboarding) qui s'ouvre automatiquement
+à la première installation.
+
+---
 
 ### Prérequis : créer un endpoint Formspree
 
@@ -111,10 +126,13 @@ indépendamment des fichiers de l'extension.
 ```
 NextDNS-Reporter/
 ├── manifest.json          — Déclaration MV3 (Chrome + Firefox)
+├── background.js          — Service worker MV3 (onboarding à l'installation)
 ├── content.js             — Script injecté sur les pages de blocage
 ├── popup.html             — Interface popup (barre d'outils)
 ├── popup.js               — Logique popup
-├── options.html           — Page paramètres complète (4 sections)
+├── onboarding.html        — Guide de démarrage guidé (4 étapes)
+├── onboarding.js          — Logique guide de démarrage
+├── options.html           — Page paramètres complète (5 onglets)
 ├── options.js             — Logique page options
 ├── icons/
 │   ├── icon.svg           — Source vectorielle (N + badge rouge)
@@ -191,9 +209,10 @@ et vérifiez que `#titleText` et `#nextdnsLogoGradient` existent toujours.
 
 ## Roadmap
 
-- **v1.4** — Page admin légère permettant à l'administrateur de répondre aux demandes
-- **v2.0** — Publication Chrome Web Store + Firefox AMO (installation sans mode développeur)
-- **v2.1** — Détection automatique du compte Google pour identification (si permission accordée)
+- ✅ **v1.4.0** — Onboarding guidé (4 étapes, certificat NextDNS), bouton accès direct via détection de traceurs, tooltips expand/collapse tactiles, payload et historique enrichis (`Version extension`, `Type appareil`, `{ ts, url, reason, status, hadDirectLink }`), suppression `chrome.identity`, DOM sûr (zéro `innerHTML` dynamique)
+- **v1.5.0** — Robustesse de la détection (MutationObserver amélioré), test webhook générique, retours utilisateur post-signalement
+- **v2.0.0** — Page admin légère pour répondre aux demandes, support webhook générique (POST JSON), Power Automate / n8n / Zapier
+- **v3.0.0** — Architecture ouverte, volumes entreprise
 
 ---
 
