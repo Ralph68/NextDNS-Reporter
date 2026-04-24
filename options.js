@@ -65,12 +65,67 @@ document.getElementById("opt-save").addEventListener("click", () => {
   });
 });
 
+// ─── Test d'envoi ────────────────────────────────────────────────────────────
+document.getElementById("opt-test").addEventListener("click", async () => {
+  const ep  = epInput.value.trim();
+  const msg = document.getElementById("opt-test-msg");
+
+  if (!ep) {
+    msg.style.color = "#fca5a5";
+    msg.textContent = "✕ Aucun endpoint configuré — enregistrez d'abord un endpoint.";
+    setTimeout(() => { msg.textContent = ""; }, 5000);
+    return;
+  }
+
+  msg.style.color = "var(--muted)";
+  msg.textContent = "Envoi en cours…";
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const res = await fetch(ep, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        Test:    "true",
+        Source:  "NextDNS Reporter test button",
+        Version: chrome.runtime.getManifest().version,
+        Date:    new Date().toISOString()
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      msg.style.color = "#6ee7b7";
+      msg.textContent = "✓ Test envoyé avec succès — vérifiez votre boîte mail.";
+    } else {
+      msg.style.color = "#fca5a5";
+      msg.textContent = "✕ Erreur HTTP " + res.status + " — " + res.statusText;
+    }
+  } catch (err) {
+    clearTimeout(timer);
+    msg.style.color = "#fca5a5";
+    msg.textContent = err.name === "AbortError"
+      ? "✕ Délai dépassé (10 s) — vérifiez l'endpoint."
+      : "✕ Erreur réseau : " + err.message;
+  }
+  setTimeout(() => { msg.textContent = ""; }, 7000);
+});
+
 // ─── Historique ──────────────────────────────────────────────────────────────
 function renderHistory() {
   chrome.storage.local.get(["ndns_reported"], data => {
     const container = document.getElementById("history-list");
     const map = data.ndns_reported || {};
-    const entries = Object.entries(map).sort((a,b) => b[1].ts - a[1].ts);
+
+    // Compatibilité : ancien format = { domain: timestamp }, nouveau = { domain: { ts, url, … } }
+    const entries = Object.entries(map).sort((a, b) => {
+      const ta = typeof a[1] === "object" ? (a[1].ts || 0) : a[1];
+      const tb = typeof b[1] === "object" ? (b[1].ts || 0) : b[1];
+      return tb - ta;
+    });
+
     container.textContent = "";
 
     if (!entries.length) {
@@ -81,34 +136,75 @@ function renderHistory() {
       return;
     }
 
-    entries.forEach(([domain, entry]) => {
-      const date = new Date(entry.ts).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
-      const elapsed = Date.now() - entry.ts;
-      const hoursLeft = Math.max(0, Math.ceil((48*3600*1000 - elapsed) / 3600000));
+    entries.forEach(([domain, raw]) => {
+      // Normalisation : ancien format = nombre brut, nouveau = objet
+      const entry   = typeof raw === "object" ? raw : { ts: raw };
+      const ts      = entry.ts || 0;
+      const date    = new Date(ts).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+      const elapsed = Date.now() - ts;
+      const hoursLeft = Math.max(0, Math.ceil((48 * 3600 * 1000 - elapsed) / 3600000));
 
       const item = document.createElement("div");
       item.className = "history-item";
 
+      // ── Colonne gauche ──────────────────────────────────────────────────────
       const left = document.createElement("div");
+      left.style.minWidth = "0"; // nécessaire pour que text-overflow fonctionne sur les enfants
 
+      // Domaine
       const domEl = document.createElement("div");
       domEl.className = "history-domain";
-      domEl.textContent = domain; // textContent — pas d'injection possible
+      domEl.textContent = domain;
+      left.appendChild(domEl);
 
+      // URL tronquée (title = URL complète au survol)
+      if (entry.url) {
+        const urlEl = document.createElement("div");
+        urlEl.className = "history-url";
+        urlEl.title = entry.url;
+        urlEl.textContent = entry.url;
+        left.appendChild(urlEl);
+      }
+
+      // Motif de blocage
+      if (entry.reason) {
+        const reasonEl = document.createElement("div");
+        reasonEl.className = "history-reason";
+        reasonEl.textContent = "Motif : " + entry.reason;
+        left.appendChild(reasonEl);
+      }
+
+      // Badges
       const metaEl = document.createElement("div");
       metaEl.className = "history-meta";
-      metaEl.style.marginTop = "4px";
 
-      const badge = document.createElement("span");
-      badge.className = hoursLeft > 0 ? "badge badge-amber" : "badge badge-green";
-      badge.textContent = hoursLeft > 0
-        ? hoursLeft + "h avant de pouvoir re-signaler"
-        : "Nouveau signalement possible";
+      // Badge statut envoi (sent / error)
+      if (entry.status) {
+        const statusBadge = document.createElement("span");
+        statusBadge.className = entry.status === "sent" ? "badge badge-green" : "badge badge-red";
+        statusBadge.textContent = entry.status === "sent" ? "Envoyé" : "Erreur";
+        metaEl.appendChild(statusBadge);
+      }
 
-      metaEl.appendChild(badge);
-      left.appendChild(domEl);
+      // Badge accès direct proposé
+      if (entry.hadDirectLink) {
+        const linkBadge = document.createElement("span");
+        linkBadge.className = "badge badge-amber";
+        linkBadge.textContent = "↗ Accès direct proposé";
+        metaEl.appendChild(linkBadge);
+      }
+
+      // Badge cooldown 48 h
+      const coolBadge = document.createElement("span");
+      coolBadge.className = hoursLeft > 0 ? "badge badge-amber" : "badge badge-green";
+      coolBadge.textContent = hoursLeft > 0
+        ? hoursLeft + "h avant re-signalement"
+        : "Re-signalement possible";
+      metaEl.appendChild(coolBadge);
+
       left.appendChild(metaEl);
 
+      // ── Colonne droite : date ───────────────────────────────────────────────
       const timeEl = document.createElement("div");
       timeEl.className = "history-time";
       timeEl.textContent = date;
@@ -131,6 +227,7 @@ document.getElementById("clear-history").addEventListener("click", () => {
   });
 });
 
-function esc(s) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+// ─── Guide de démarrage ───────────────────────────────────────────────────────
+document.getElementById("btn-guide-link").addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
+});
