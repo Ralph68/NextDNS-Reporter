@@ -381,11 +381,23 @@
   document.head.appendChild(style);
 
   // ─── 9. DOM ─────────────────────────────────────────────────────────────────
-  function tipWrap(id, tipText) {
-    return `<span class="ndns-tip-wrap">
-      <span class="ndns-tip-icon" tabindex="0" role="tooltip" aria-label="${tipText}">?</span>
-      <span class="ndns-tip-bubble">${tipText}</span>
-    </span>`;
+  // Crée un tooltip via DOM (zéro innerHTML — exigence AMO/CSP).
+  // Les tooltips restent déclenchés au :hover/:focus-within (CSS existant).
+  function makeTipWrap(tipText) {
+    const wrap = document.createElement("span");
+    wrap.className = "ndns-tip-wrap";
+    const icon = document.createElement("span");
+    icon.className = "ndns-tip-icon";
+    icon.setAttribute("tabindex", "0");
+    icon.setAttribute("role", "tooltip");
+    icon.setAttribute("aria-label", tipText);
+    icon.textContent = "?";
+    const bubble = document.createElement("span");
+    bubble.className = "ndns-tip-bubble";
+    bubble.textContent = tipText;
+    wrap.appendChild(icon);
+    wrap.appendChild(bubble);
+    return wrap;
   }
 
   const fab = document.createElement("button");
@@ -410,129 +422,231 @@
   }
   buildFabContent(fab);
 
-  const detailRows = [
-    `<div class="ndns-detail-row"><b>URL :</b> ${pageUrl}</div>`,
-    referrer ? `<div class="ndns-detail-row"><b>Source :</b> ${referrer}</div>` : "",
-    `<div class="ndns-detail-row" id="ndns-reason-row" style="display:none"><b>Motif :</b> <span id="ndns-reason-val"></span></div>`
-  ].join("");
-
+  // Construit la modale et tous ses enfants via DOM (zéro innerHTML — exigence AMO).
+  // Tous les IDs existants sont préservés pour rester compatibles avec les sections REFS+.
   const overlay = document.createElement("div");
   overlay.id = "ndns-overlay";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "ndns-modal-title");
 
-  overlay.innerHTML = `
-  <div id="ndns-card">
-    <button id="ndns-close" aria-label="Fermer">✕</button>
+  const card = document.createElement("div");
+  card.id = "ndns-card";
 
-    <p class="ndns-title" id="ndns-modal-title">Demander le déblocage</p>
-    <p class="ndns-subtitle">
-      L'administrateur réseau recevra un email et traitera votre demande.
-    </p>
+  // ── Bouton fermer ──
+  const cBtn = document.createElement("button");
+  cBtn.id = "ndns-close"; cBtn.setAttribute("aria-label", "Fermer"); cBtn.textContent = "✕";
+  card.appendChild(cBtn);
 
-    <div id="ndns-already-banner"></div>
+  // ── Titre et sous-titre ──
+  const mTitle = document.createElement("p");
+  mTitle.className = "ndns-title"; mTitle.id = "ndns-modal-title";
+  mTitle.textContent = "Demander le déblocage";
+  card.appendChild(mTitle);
+  const mSub = document.createElement("p");
+  mSub.className = "ndns-subtitle";
+  mSub.textContent = "L'administrateur réseau recevra un email et traitera votre demande.";
+  card.appendChild(mSub);
 
-    <div class="ndns-domain-block">
-      <div class="ndns-domain-main">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-             stroke="rgba(255,255,255,0.45)" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>
-        </svg>
-        ${domain}
-      </div>
-      <button class="ndns-details-toggle" id="ndns-details-toggle" type="button">
-        + Détails techniques
-      </button>
-      <div class="ndns-details" id="ndns-details">${detailRows}</div>
-    </div>
+  // ── Bannière déjà signalé ──
+  const abBanner = document.createElement("div");
+  abBanner.id = "ndns-already-banner";
+  card.appendChild(abBanner);
 
-    <div class="ndns-field">
-      <div class="ndns-label-row">
-        <span class="ndns-label">Email</span>
-        <span class="ndns-required">*</span>
-        ${tipWrap("tip-email", "Votre adresse email permet à l'administrateur de vous répondre et de savoir qui fait la demande.")}
-      </div>
-      <input class="ndns-input" id="ndns-email" type="email"
-             placeholder="votre@email.com"
-             maxlength="${EMAIL_MAX_LEN}" autocomplete="email"
-             aria-required="true" aria-describedby="ndns-email-err"/>
-      <div class="ndns-field-error" id="ndns-email-err">
-        Merci de saisir une adresse email valide.
-      </div>
-    </div>
+  // ── Bloc domaine ──
+  const domBlock = document.createElement("div");
+  domBlock.className = "ndns-domain-block";
 
-    <div class="ndns-field">
-      <div class="ndns-label-row">
-        <span class="ndns-label">Prénom</span>
-        <span class="ndns-optional-tag">(facultatif)</span>
-        ${tipWrap("tip-name", "Votre prénom aide l'administrateur à personnaliser sa réponse.")}
-      </div>
-      <input class="ndns-input" id="ndns-name" type="text"
-             placeholder="Votre prénom"
-             maxlength="${NAME_MAX_LEN}" autocomplete="given-name"
-             aria-describedby="ndns-name-err"/>
-      <div class="ndns-field-error" id="ndns-name-err"></div>
-    </div>
+  const domMain = document.createElement("div");
+  domMain.className = "ndns-domain-main";
+  // SVG globe — construit via createElementNS (pas de innerHTML)
+  const gSvg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  gSvg.setAttribute("width","13"); gSvg.setAttribute("height","13");
+  gSvg.setAttribute("viewBox","0 0 24 24"); gSvg.setAttribute("fill","none");
+  gSvg.setAttribute("stroke","rgba(255,255,255,0.45)"); gSvg.setAttribute("stroke-width","2");
+  gSvg.setAttribute("aria-hidden","true");
+  const gC = document.createElementNS("http://www.w3.org/2000/svg","circle");
+  gC.setAttribute("cx","12"); gC.setAttribute("cy","12"); gC.setAttribute("r","10");
+  const gL = document.createElementNS("http://www.w3.org/2000/svg","line");
+  gL.setAttribute("x1","2"); gL.setAttribute("y1","12"); gL.setAttribute("x2","22"); gL.setAttribute("y2","12");
+  const gP = document.createElementNS("http://www.w3.org/2000/svg","path");
+  gP.setAttribute("d","M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20");
+  gSvg.appendChild(gC); gSvg.appendChild(gL); gSvg.appendChild(gP);
+  domMain.appendChild(gSvg);
+  domMain.appendChild(document.createTextNode(domain));
+  domBlock.appendChild(domMain);
 
-    <div class="ndns-remember-row">
-      <label class="ndns-remember-label">
-        <input type="checkbox" id="ndns-remember" checked/>
-        Mémoriser mes coordonnées
-      </label>
-      ${tipWrap("tip-remember", "Vos coordonnées sont enregistrées uniquement sur cet appareil. Elles seront pré-remplies lors de votre prochain signalement.")}
-    </div>
-    <div id="ndns-toast"></div>
+  const dToggle = document.createElement("button");
+  dToggle.className = "ndns-details-toggle"; dToggle.id = "ndns-details-toggle";
+  dToggle.type = "button"; dToggle.textContent = "+ Détails techniques";
+  domBlock.appendChild(dToggle);
 
-    <div style="margin-top:14px">
-      <div class="ndns-section-label">
-        Contexte
-        <span class="ndns-optional-tag" style="font-size:10px">(facultatif)</span>
-        ${tipWrap("tip-context", "Indiquer d'où vient le lien aide l'administrateur à prioriser et contextualiser sa décision.")}
-      </div>
-      <div class="ndns-chips" id="ndns-chips">
-        ${CHIPS.map(c => `<button class="ndns-chip" data-id="${c.id}" type="button">${c.label}</button>`).join("")}
-      </div>
-    </div>
+  const dPanel = document.createElement("div");
+  dPanel.className = "ndns-details"; dPanel.id = "ndns-details";
+  // Ligne URL (textContent — pageUrl jamais injecté comme HTML)
+  const urlRow = document.createElement("div"); urlRow.className = "ndns-detail-row";
+  const urlB = document.createElement("b"); urlB.textContent = "URL :";
+  urlRow.appendChild(urlB); urlRow.appendChild(document.createTextNode(" " + pageUrl));
+  dPanel.appendChild(urlRow);
+  // Ligne Source — conditionnelle
+  if (referrer) {
+    const refRow = document.createElement("div"); refRow.className = "ndns-detail-row";
+    const refB = document.createElement("b"); refB.textContent = "Source :";
+    refRow.appendChild(refB); refRow.appendChild(document.createTextNode(" " + referrer));
+    dPanel.appendChild(refRow);
+  }
+  // Ligne Motif — masquée par défaut, remplie dynamiquement par watchBlockReason
+  const reasonRowEl = document.createElement("div");
+  reasonRowEl.className = "ndns-detail-row"; reasonRowEl.id = "ndns-reason-row";
+  reasonRowEl.style.display = "none";
+  const reasonB = document.createElement("b"); reasonB.textContent = "Motif :";
+  const reasonValEl = document.createElement("span"); reasonValEl.id = "ndns-reason-val";
+  reasonRowEl.appendChild(reasonB);
+  reasonRowEl.appendChild(document.createTextNode(" "));
+  reasonRowEl.appendChild(reasonValEl);
+  dPanel.appendChild(reasonRowEl);
+  domBlock.appendChild(dPanel);
+  card.appendChild(domBlock);
 
-    <div class="ndns-field">
-      <div class="ndns-label-row">
-        <span class="ndns-label">Commentaire</span>
-        <span class="ndns-optional-tag">(facultatif)</span>
-        ${tipWrap("tip-comment", "Décrivez brièvement pourquoi vous avez besoin d'accéder à ce site (max ${COMMENT_MAX_LEN} caractères).")}
-      </div>
-      <textarea class="ndns-input" id="ndns-comment"
-                placeholder="Ex : besoin pour un devis fournisseur, lien reçu dans une newsletter…"
-                maxlength="${COMMENT_MAX_LEN}"
-                rows="3"
-                aria-describedby="ndns-comment-err"></textarea>
-      <div class="ndns-char-count" id="ndns-char-count">0 / ${COMMENT_MAX_LEN}</div>
-      <div class="ndns-field-error" id="ndns-comment-err"></div>
-    </div>
+  // ── Champ Email ──
+  const eField = document.createElement("div"); eField.className = "ndns-field";
+  const eLR = document.createElement("div"); eLR.className = "ndns-label-row";
+  const eLbl = document.createElement("span"); eLbl.className = "ndns-label"; eLbl.textContent = "Email";
+  const eReq = document.createElement("span"); eReq.className = "ndns-required"; eReq.textContent = "*";
+  eLR.appendChild(eLbl); eLR.appendChild(eReq);
+  eLR.appendChild(makeTipWrap("Votre adresse email permet à l'administrateur de vous répondre et de savoir qui fait la demande."));
+  eField.appendChild(eLR);
+  const eInput = document.createElement("input");
+  eInput.className = "ndns-input"; eInput.id = "ndns-email"; eInput.type = "email";
+  eInput.placeholder = "votre@email.com";
+  eInput.setAttribute("maxlength", String(EMAIL_MAX_LEN));
+  eInput.setAttribute("autocomplete", "email");
+  eInput.setAttribute("aria-required", "true");
+  eInput.setAttribute("aria-describedby", "ndns-email-err");
+  eField.appendChild(eInput);
+  const eErr = document.createElement("div");
+  eErr.className = "ndns-field-error"; eErr.id = "ndns-email-err";
+  eErr.textContent = "Merci de saisir une adresse email valide.";
+  eField.appendChild(eErr);
+  card.appendChild(eField);
 
-    <button id="ndns-send-btn" type="button">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
-      </svg>
-      Envoyer la demande
-    </button>
-    <div id="ndns-status" role="status" aria-live="polite"></div>
+  // ── Champ Prénom ──
+  const nField = document.createElement("div"); nField.className = "ndns-field";
+  const nLR = document.createElement("div"); nLR.className = "ndns-label-row";
+  const nLbl = document.createElement("span"); nLbl.className = "ndns-label"; nLbl.textContent = "Prénom";
+  const nOpt = document.createElement("span"); nOpt.className = "ndns-optional-tag"; nOpt.textContent = "(facultatif)";
+  nLR.appendChild(nLbl); nLR.appendChild(nOpt);
+  nLR.appendChild(makeTipWrap("Votre prénom aide l'administrateur à personnaliser sa réponse."));
+  nField.appendChild(nLR);
+  const nInput = document.createElement("input");
+  nInput.className = "ndns-input"; nInput.id = "ndns-name"; nInput.type = "text";
+  nInput.placeholder = "Votre prénom";
+  nInput.setAttribute("maxlength", String(NAME_MAX_LEN));
+  nInput.setAttribute("autocomplete", "given-name");
+  nInput.setAttribute("aria-describedby", "ndns-name-err");
+  nField.appendChild(nInput);
+  const nErr = document.createElement("div");
+  nErr.className = "ndns-field-error"; nErr.id = "ndns-name-err";
+  nField.appendChild(nErr);
+  card.appendChild(nField);
 
-    <div id="ndns-refresh-block">
-      <p>Si l'administrateur a déjà traité votre demande,<br>rafraîchissez la page pour vérifier.</p>
-      <button id="ndns-refresh-btn" type="button">
-        ↺ Rafraîchir la page
-      </button>
-      <div id="ndns-refresh-hint">
-        Si la page est toujours bloquée après rafraîchissement :<br>
-        appuyez sur <kbd style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-size:10px">Ctrl+Shift+R</kbd> pour vider le cache.
-      </div>
-    </div>
+  // ── Ligne Mémoriser ──
+  const remRow = document.createElement("div"); remRow.className = "ndns-remember-row";
+  const remLbl = document.createElement("label"); remLbl.className = "ndns-remember-label";
+  const remChk = document.createElement("input");
+  remChk.type = "checkbox"; remChk.id = "ndns-remember"; remChk.checked = true;
+  remLbl.appendChild(remChk);
+  remLbl.appendChild(document.createTextNode("Mémoriser mes coordonnées"));
+  remRow.appendChild(remLbl);
+  remRow.appendChild(makeTipWrap("Vos coordonnées sont enregistrées uniquement sur cet appareil. Elles seront pré-remplies lors de votre prochain signalement."));
+  card.appendChild(remRow);
+  const toastDiv = document.createElement("div"); toastDiv.id = "ndns-toast";
+  card.appendChild(toastDiv);
 
-  </div>`;
+  // ── Section Contexte (chips) ──
+  const ctxDiv = document.createElement("div"); ctxDiv.style.marginTop = "14px";
+  const ctxLbl = document.createElement("div"); ctxLbl.className = "ndns-section-label";
+  ctxLbl.appendChild(document.createTextNode("Contexte"));
+  const ctxOpt = document.createElement("span"); ctxOpt.className = "ndns-optional-tag";
+  ctxOpt.style.fontSize = "10px"; ctxOpt.textContent = "(facultatif)";
+  ctxLbl.appendChild(ctxOpt);
+  ctxLbl.appendChild(makeTipWrap("Indiquer d'où vient le lien aide l'administrateur à prioriser et contextualiser sa décision."));
+  ctxDiv.appendChild(ctxLbl);
+  const chipsDiv = document.createElement("div");
+  chipsDiv.className = "ndns-chips"; chipsDiv.id = "ndns-chips";
+  CHIPS.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "ndns-chip"; b.dataset.id = c.id; b.type = "button"; b.textContent = c.label;
+    chipsDiv.appendChild(b);
+  });
+  ctxDiv.appendChild(chipsDiv);
+  card.appendChild(ctxDiv);
+
+  // ── Champ Commentaire ──
+  const cField = document.createElement("div"); cField.className = "ndns-field";
+  const cLR = document.createElement("div"); cLR.className = "ndns-label-row";
+  const cLbl = document.createElement("span"); cLbl.className = "ndns-label"; cLbl.textContent = "Commentaire";
+  const cOpt = document.createElement("span"); cOpt.className = "ndns-optional-tag"; cOpt.textContent = "(facultatif)";
+  cLR.appendChild(cLbl); cLR.appendChild(cOpt);
+  // Correction bug : COMMENT_MAX_LEN était affiché littéralement (chaîne ordinaire dans template)
+  cLR.appendChild(makeTipWrap("Décrivez brièvement pourquoi vous avez besoin d'accéder à ce site (max " + COMMENT_MAX_LEN + " caractères)."));
+  cField.appendChild(cLR);
+  const cArea = document.createElement("textarea");
+  cArea.className = "ndns-input"; cArea.id = "ndns-comment"; cArea.rows = 3;
+  cArea.placeholder = "Ex : besoin pour un devis fournisseur, lien reçu dans une newsletter…";
+  cArea.setAttribute("maxlength", String(COMMENT_MAX_LEN));
+  cArea.setAttribute("aria-describedby", "ndns-comment-err");
+  cField.appendChild(cArea);
+  const cCount = document.createElement("div");
+  cCount.className = "ndns-char-count"; cCount.id = "ndns-char-count";
+  cCount.textContent = "0 / " + COMMENT_MAX_LEN;
+  cField.appendChild(cCount);
+  const cErr = document.createElement("div");
+  cErr.className = "ndns-field-error"; cErr.id = "ndns-comment-err";
+  cField.appendChild(cErr);
+  card.appendChild(cField);
+
+  // ── Bouton Envoyer ──
+  const sBtnEl = document.createElement("button"); sBtnEl.id = "ndns-send-btn"; sBtnEl.type = "button";
+  const sSvg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  sSvg.setAttribute("width","15"); sSvg.setAttribute("height","15");
+  sSvg.setAttribute("viewBox","0 0 24 24"); sSvg.setAttribute("fill","none");
+  sSvg.setAttribute("stroke","currentColor"); sSvg.setAttribute("stroke-width","2.2");
+  sSvg.setAttribute("stroke-linecap","round"); sSvg.setAttribute("stroke-linejoin","round");
+  sSvg.setAttribute("aria-hidden","true");
+  const sP1 = document.createElementNS("http://www.w3.org/2000/svg","path"); sP1.setAttribute("d","M22 2L11 13");
+  const sP2 = document.createElementNS("http://www.w3.org/2000/svg","path"); sP2.setAttribute("d","M22 2L15 22l-4-9-9-4 20-7z");
+  sSvg.appendChild(sP1); sSvg.appendChild(sP2);
+  sBtnEl.appendChild(sSvg); sBtnEl.appendChild(document.createTextNode(" Envoyer la demande"));
+  card.appendChild(sBtnEl);
+
+  // Statut d'envoi
+  const stsEl = document.createElement("div"); stsEl.id = "ndns-status";
+  stsEl.setAttribute("role","status"); stsEl.setAttribute("aria-live","polite");
+  card.appendChild(stsEl);
+
+  // ── Bloc rafraîchissement post-envoi ──
+  const rfBlock = document.createElement("div"); rfBlock.id = "ndns-refresh-block";
+  const rfP = document.createElement("p");
+  rfP.appendChild(document.createTextNode("Si l'administrateur a déjà traité votre demande,"));
+  rfP.appendChild(document.createElement("br"));
+  rfP.appendChild(document.createTextNode("rafraîchissez la page pour vérifier."));
+  rfBlock.appendChild(rfP);
+  const rfBtn = document.createElement("button"); rfBtn.id = "ndns-refresh-btn"; rfBtn.type = "button";
+  rfBtn.textContent = "↺ Rafraîchir la page";
+  rfBlock.appendChild(rfBtn);
+  const rfHint = document.createElement("div"); rfHint.id = "ndns-refresh-hint";
+  rfHint.appendChild(document.createTextNode("Si la page est toujours bloquée après rafraîchissement :"));
+  rfHint.appendChild(document.createElement("br"));
+  rfHint.appendChild(document.createTextNode("appuyez sur "));
+  const rfKbd = document.createElement("kbd");
+  rfKbd.style.cssText = "background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-size:10px";
+  rfKbd.textContent = "Ctrl+Shift+R";
+  rfHint.appendChild(rfKbd); rfHint.appendChild(document.createTextNode(" pour vider le cache."));
+  rfBlock.appendChild(rfHint);
+  card.appendChild(rfBlock);
+
+  overlay.appendChild(card);
 
   document.body.appendChild(fab);
   document.body.appendChild(overlay);
