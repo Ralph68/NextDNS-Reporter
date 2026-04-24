@@ -61,8 +61,10 @@
     if (s.includes("Linux"))    return "Linux";
     return "Inconnu";
   }
-  const browser = parseBrowser(ua);
-  const os      = parseOS(ua);
+  const browser    = parseBrowser(ua);
+  const os         = parseOS(ua);
+  const extVersion = chrome.runtime.getManifest().version;
+  const deviceType = /Mobile|Android|iPhone|iPad/.test(ua) ? "Mobile" : "Desktop";
 
   // ─── 4. STORAGE ────────────────────────────────────────────────────────────
   function storageGet(keys) {
@@ -94,13 +96,21 @@
   }
   async function wasRecentlyReported(dom) {
     const map = await getReportedMap();
-    const e = map[dom];
-    return e && (Date.now() - e.ts) < BLOCK_EXPIRY_MS;
+    const raw = map[dom];
+    if (!raw) return false;
+    // Rétrocompat : ancien format = nombre brut, v1.3+ = objet avec .ts
+    const ts = typeof raw === "object" ? (raw.ts || 0) : raw;
+    return (Date.now() - ts) < BLOCK_EXPIRY_MS;
   }
   async function markAsReported(dom, extra = {}) {
     const map = await getReportedMap();
     map[dom] = { ts: Date.now(), ...extra };
-    const entries = Object.entries(map).sort((a,b) => b[1].ts - a[1].ts).slice(0, 30);
+    // Rétrocompat : normaliser le .ts des entrées en ancien format lors du tri
+    const entries = Object.entries(map).sort((a, b) => {
+      const ta = typeof a[1] === "object" ? (a[1].ts || 0) : (a[1] || 0);
+      const tb = typeof b[1] === "object" ? (b[1].ts || 0) : (b[1] || 0);
+      return tb - ta;
+    }).slice(0, 30);
     storageSet({ ndns_reported: Object.fromEntries(entries) });
   }
 
@@ -1026,18 +1036,20 @@
     statusEl.textContent = "";
 
     const payload = {
-      "Email":           email,
-      "Prénom":          name || "—",
-      "Domaine bloqué":  domain,
-      "URL complète":    pageUrl,
-      "Source":          referrer || "Accès direct",
-      "Motif NextDNS":   blockReason || "Non détecté",
-      "Contexte":        context || "Non précisé",
-      "Commentaire":     comment || "—",
-      "Système":         os,
-      "Navigateur":      browser,
-      "Date heure":      timestamp,
-      "User-Agent":      ua
+      "Email":              email,
+      "Prénom":             name || "—",
+      "Domaine bloqué":     domain,
+      "URL complète":       pageUrl,
+      "Source":             referrer || "Accès direct",
+      "Motif NextDNS":      blockReason || "Non détecté",
+      "Contexte":           context || "Non précisé",
+      "Commentaire":        comment || "—",
+      "Système":            os,
+      "Navigateur":         browser,
+      "Version extension":  extVersion,
+      "Type appareil":      deviceType,
+      "Date heure":         timestamp,
+      "User-Agent":         ua
     };
 
     const controller = new AbortController();
@@ -1053,7 +1065,12 @@
       clearTimeout(timer);
       if (!res.ok) throw new Error("HTTP " + res.status);
 
-      await markAsReported(domain, { hadDirectLink });
+      await markAsReported(domain, {
+        url:           pageUrl,
+        reason:        blockReason || "",
+        status:        "sent",
+        hadDirectLink
+      });
 
       // Si mémoriser cochée → persister
       persistIfChecked();
