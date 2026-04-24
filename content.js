@@ -1,4 +1,4 @@
-/* NextDNS Reporter — content.js — v1.3.0
+/* NextDNS Reporter — content.js — v1.4.0
  * © 2026 Jean-Thomas Runser. MIT License.
  * https://github.com/jeantoroot/NextDNS-Reporter
  *
@@ -1007,8 +1007,9 @@
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
   refreshBtn.addEventListener("click", () => {
-    // Force reload + cache clear
-    location.reload(true);
+    // Force reload + cache clear (location.reload(true) déprécié)
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    location.reload();
   });
 
   // ─── 20. ENVOI ──────────────────────────────────────────────────────────────
@@ -1027,7 +1028,6 @@
     }
     const url = ep.startsWith("https://") ? ep : `https://formspree.io/f/${ep}`;
 
-    const fabOrigText = fab.textContent;
     fab.textContent = "Envoi…";
     fab.disabled = true;
     sendBtn.disabled = true;
