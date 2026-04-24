@@ -22,15 +22,18 @@ Formspree endpoint configured by the network administrator:
 
 | Field | Source | Purpose |
 |---|---|---|
-| Identity (name or email) | Provided by user or detected via Google account | Identify the requester |
+| Email | Provided by user | Identify the requester; allow the admin to reply |
+| First name | Provided by user (optional) | Personalize the admin's response |
 | Blocked domain | Page title / URL | Identify what to unblock |
 | Full URL | Browser address bar (`location.href`) | Provide context |
 | Referrer URL | `document.referrer` | Show where the link came from |
 | Block reason | NextDNS block page DOM (`#lists`) | Show which blocklist triggered |
 | Context chips | User selection | Categorize the request |
-| Comment | User input | Free-form explanation |
+| Comment | User input (optional) | Free-form explanation |
 | Operating system | User agent string | Technical context |
 | Browser | User agent string | Technical context |
+| Extension version | `chrome.runtime.getManifest().version` | Diagnostic |
+| Device type | User agent string | Desktop or Mobile |
 | Date and time | Browser clock | Timestamp the request |
 | User agent | `navigator.userAgent` | Full technical diagnostic |
 
@@ -48,17 +51,11 @@ Formspree endpoint configured by the network administrator:
 
 ---
 
-## Google account identity (chrome.identity permission)
+## Identity data
 
-The extension requests the `identity` permission to optionally read the email
-address of the Google account signed into Chrome. This is used **only** to
-pre-fill the identity field in the report form, so the network administrator
-knows who submitted the request.
-
-- This is entirely optional — you can decline and enter your name manually.
-- The email is never stored by the extension unless you check "Remember".
-- The email is never shared with third parties other than the configured
-  Formspree endpoint (which belongs to your network administrator).
+Identity data (name and email) is provided manually by the user only.
+The extension never reads, detects, or retrieves identity information
+automatically from any account, browser profile, or system.
 
 ---
 
@@ -70,9 +67,9 @@ The extension stores the following data locally in your browser
 | Key | Content | Purpose |
 |---|---|---|
 | `ndns_endpoint` | Formspree URL | Where to send reports |
-| `ndns_username` | Name or email | Pre-fill identity field |
+| `ndns_username` | First name (optional) | Pre-fill the name field |
 | `ndns_oneclic` | Boolean | One-click mode preference |
-| `ndns_reported` | Map of domains + timestamps | Anti-duplicate (48h) |
+| `ndns_reported` | Map of domains → `{ ts, url, reason, status, hadDirectLink }` | Anti-duplicate (48h), up to 30 entries |
 
 This data stays on your device. It is never sent anywhere except when you
 explicitly submit a report (only the fields listed above, to your Formspree endpoint).
@@ -100,7 +97,8 @@ NextDNS privacy policy: https://nextdns.io/privacy
 ## Data retention
 
 The extension stores up to 30 report history entries locally. Each entry contains
-only the domain name and timestamp. History can be cleared at any time.
+the domain name, timestamp, page URL, block reason, send status, and whether a
+direct-access button was shown. History can be cleared at any time.
 There is no server-side data retention — the extension has no backend.
 
 ---

@@ -1,16 +1,52 @@
 # Changelog — NextDNS Reporter
 
-## [1.4.0] — 2026-04-23
+## [1.4.0] — 2026-04-24
 
-### Fixed
-- Suppression de la permission `identity` inutilisée (rejet Chrome Web Store,
-  référence Purple Potassium)
+### Sécurité & conformité AMO/CWS
+- Suppression de la permission `chrome.identity` et de toute lecture automatique
+  du compte Google — l'identité est désormais uniquement saisie manuellement
+- Suppression de tous les `innerHTML` dynamiques dans `content.js` — construction
+  DOM complète via `createElement` / `textContent` / `appendChild` (exigence AMO)
+- Remplacement de `location.reload(true)` (déprécié) par `caches.keys()` + `location.reload()`
 
-### Changed
-- FAB et modale entièrement adaptés aux écrans tactiles (touch targets 48px,
-  dvh, visualViewport API pour le clavier virtuel)
-- Popup : banner d'information sur Firefox Android (popup non accessible)
-- Options : layout responsive en dessous de 640px (nav horizontale, 1 colonne)
+### Onboarding
+- Nouveau guide de démarrage guidé en 4 étapes (`onboarding.html` + `onboarding.js`) :
+  fonctionnement de l'extension, prérequis certificat NextDNS, configuration endpoint
+  Formspree, résumé de configuration
+- Ouverture automatique à la première installation uniquement (via `background.js`)
+- Lien "Revoir le guide de démarrage" dans la page Aide des paramètres
+
+### Bouton accès direct
+- Détection automatique de la cible légitime derrière un traceur/redirecteur email
+  (`detectLegitimateTarget()`) : analyse du `document.referrer` et des paramètres
+  d'URL (`url`, `redirect`, `target`…)
+- Bouton `#ndns-fab-direct` "→ Accéder directement à [domaine]" affiché au-dessus
+  du FAB de signalement si une cible fiable est détectée
+- Filtre ESP/CDN (SendGrid, Klaviyo, Mailchimp…) et filtre mots-clés tracker
+
+### Tooltips tactiles
+- Remplacement des tooltips CSS `:hover` / `:focus-within` par un système
+  expand/collapse au clic — compatible écran tactile et clavier
+- Icône `?` convertie en `<button type="button">` avec `aria-expanded` / `aria-controls`
+- Fermeture automatique au clic à l'extérieur
+
+### Payload enrichi
+- Ajout de `"Version extension"` (`chrome.runtime.getManifest().version`) dans chaque signalement
+- Ajout de `"Type appareil"` (`Desktop` ou `Mobile` détecté via user-agent)
+
+### Historique enrichi
+- Format `ndns_reported` enrichi : `{ ts, url, reason, status, hadDirectLink }`
+- Rétrocompatibilité avec les anciens formats (nombre brut v1.0–1.2, objet `{ ts }` v1.3)
+- Badge "↗ Accès direct proposé" dans l'historique si `hadDirectLink: true`
+- Badge statut envoi (Envoyé / Erreur) dans l'historique
+
+### Interface
+- FAB et modale entièrement adaptés aux écrans tactiles (touch targets 48px minimum,
+  `dvh`, `visualViewport` API pour le clavier virtuel Android/iOS)
+- Popup : bannière d'information sur Firefox Android (popup non accessible nativement)
+- Options : layout responsive en dessous de 640px (nav horizontale scrollable, 1 colonne)
+- Options : bouton "Tester l'envoi" avec `AbortController` et timeout 10s
+- Options : carte "Certificat NextDNS requis" en première position dans l'Aide
 
 ---
 

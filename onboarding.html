@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NextDNS Reporter — Bienvenue</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0a1628; --surface:#0f2135; --surface2:#152840; --surface3:#1a3050;
+  --border:rgba(255,255,255,0.08); --text:#e2e8f0;
+  --muted:rgba(255,255,255,0.5); --hint:rgba(255,255,255,0.28);
+  --blue:#1a56db; --blue-l:#4f87e8; --green:#0e9f6e;
+  --amber:#f59e0b; --red:#ef4444;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: system-ui,-apple-system,sans-serif;
+  font-size: 15px; line-height: 1.6;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 40px 16px 60px;
+}
+
+/* ── En-tête ── */
+.ob-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 36px;
+}
+.ob-icon {
+  width: 40px; height: 40px; background: var(--blue); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.ob-title { font-size: 20px; font-weight: 700; }
+.ob-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* ── Progression ── */
+.ob-progress {
+  display: flex; gap: 8px; margin-bottom: 36px; align-items: center;
+}
+.ob-step-dot {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--surface); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex: none; transition: all 0.2s;
+}
+.ob-step-dot.active { border-color: var(--blue-l); background: rgba(79,135,232,0.18); color: #93b8f8; }
+.ob-step-dot.done { border-color: var(--green); background: rgba(14,159,110,0.2); color: #6ee7b7; }
+.ob-step-line { flex: 1; height: 2px; background: var(--border); border-radius: 1px; }
+
+/* ── Conteneur d'étape ── */
+.ob-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px 36px;
+  width: 100%; max-width: 600px;
+  display: none;
+}
+.ob-card.active { display: block; }
+.ob-step-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.ob-step-desc { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.7; }
+
+/* ── Étape 1 — Schéma ── */
+.ob-flow {
+  display: flex; flex-direction: column; gap: 0;
+  margin: 24px 0;
+}
+.ob-flow-row {
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.ob-flow-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex: none;
+}
+.ob-flow-text { padding-top: 6px; }
+.ob-flow-text strong { display: block; font-size: 13px; font-weight: 600; }
+.ob-flow-text span { font-size: 12px; color: var(--muted); }
+.ob-flow-arrow {
+  margin-left: 18px; height: 20px; display: flex; align-items: center;
+  color: var(--hint); font-size: 18px; padding: 4px 0;
+}
+
+/* ── Étape 2 — Certificat ── */
+.ob-cert-block {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;
+  font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.7;
+}
+.ob-cert-block a { color: #fcd34d; }
+.ob-cert-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.ob-choice-btn {
+  padding: 12px 20px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+  text-align: left; transition: background 0.15s, border-color 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+.ob-choice-btn:hover { background: var(--surface3); border-color: rgba(255,255,255,0.18); }
+.ob-choice-btn.selected { border-color: var(--blue-l); background: rgba(79,135,232,0.12); }
+.ob-choice-icon { font-size: 20px; flex: none; }
+.ob-managed-msg {
+  display: none; background: rgba(14,159,110,0.1); border: 1px solid rgba(52,211,153,0.25);
+  border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+  font-size: 13px; color: #6ee7b7; line-height: 1.6;
+}
+
+/* ── Étape 3 — Configuration ── */
+.ob-field { margin-bottom: 18px; }
+.ob-label { display: block; font-size: 12px; font-weight: 600; color: var(--hint); margin-bottom: 6px; }
+.ob-input {
+  width: 100%; padding: 10px 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color 0.12s;
+}
+.ob-input:focus { border-color: rgba(255,255,255,0.3); }
+.ob-input::placeholder { color: var(--hint); }
+.ob-field-hint { font-size: 12px; color: var(--hint); margin-top: 6px; line-height: 1.5; }
+.ob-field-hint a { color: var(--blue-l); }
+.ob-ep-status { margin-top: 8px; min-height: 20px; }
+.ob-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500;
+}
+.ob-badge-green { background: rgba(14,159,110,0.18); color: #6ee7b7; }
+.ob-badge-amber { background: rgba(245,158,11,0.18); color: #fcd34d; }
+.ob-badge-red   { background: rgba(239,68,68,0.18);  color: #fca5a5; }
+.ob-save-btn {
+  padding: 10px 22px; border-radius: 8px; border: none;
+  background: var(--blue); color: #fff;
+  font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.ob-save-btn:hover { background: #1e40af; }
+.ob-save-confirm { font-size: 12px; color: #6ee7b7; margin-top: 8px; min-height: 16px; }
+.ob-future-comment {
+  font-size: 11px; color: var(--hint); margin-top: 14px;
+  padding-top: 14px; border-top: 1px solid var(--border); line-height: 1.5;
+}
+.ob-future-comment code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+/* ── Étape 4 — Prêt ── */
+.ob-check {
+  display: flex; align-items: center; justify-content: center;
+  margin: 24px 0;
+}
+.ob-check-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(14,159,110,0.2); border: 3px solid rgba(52,211,153,0.4);
+  display: flex; align-items: center; justify-content: center;
+  animation: ob-pop 0.4s cubic-bezier(0.36,0.07,0.19,0.97) both;
+}
+@keyframes ob-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+.ob-summary {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 24px;
+}
+.ob-summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ob-summary-row:last-child { border-bottom: none; }
+.ob-summary-row span:first-child { color: var(--muted); }
+.ob-summary-row span:last-child { font-weight: 500; }
+
+/* ── Navigation ── */
+.ob-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 32px; gap: 12px;
+}
+.ob-btn-prev {
+  padding: 10px 22px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--muted); font-size: 14px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.ob-btn-prev:hover { background: var(--surface3); color: var(--text); }
+.ob-btn-prev:disabled { opacity: 0.3; cursor: default; }
+.ob-btn-next {
+  padding: 10px 28px; border-radius: 8px; border: none;
+  background: var(--blue); color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background 0.15s; margin-left: auto;
+}
+.ob-btn-next:hover { background: #1e40af; }
+.ob-btn-close {
+  padding: 10px 22px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--muted); font-size: 14px; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.ob-btn-close:hover { background: var(--surface3); color: var(--text); }
+.ob-btn-options {
+  padding: 10px 22px; border-radius: 8px; border: none;
+  background: var(--green); color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.ob-btn-options:hover { background: #057a55; }
+</style>
+</head>
+<body>
+
+<div class="ob-header">
+  <div class="ob-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+    </svg>
+  </div>
+  <div>
+    <div class="ob-title">NextDNS Reporter</div>
+    <div class="ob-subtitle">Guide de démarrage</div>
+  </div>
+</div>
+
+<!-- Progression -->
+<div class="ob-progress" id="ob-progress">
+  <div class="ob-step-dot active" data-step="0" id="dot-0">1</div>
+  <div class="ob-step-line"></div>
+  <div class="ob-step-dot" data-step="1" id="dot-1">2</div>
+  <div class="ob-step-line"></div>
+  <div class="ob-step-dot" data-step="2" id="dot-2">3</div>
+  <div class="ob-step-line"></div>
+  <div class="ob-step-dot" data-step="3" id="dot-3">4</div>
+</div>
+
+<!-- ═══════ ÉTAPE 1 — Comment ça marche ═══════ -->
+<div class="ob-card active" id="step-0">
+  <div class="ob-step-title">Comment ça marche ?</div>
+  <div class="ob-step-desc">
+    NextDNS Reporter ajoute un bouton sur les pages de blocage NextDNS pour
+    demander le déblocage d'un site en un clic.<br><br>
+    Si quelqu'un gère ton réseau — un parent, un admin d'entreprise — c'est lui
+    <strong>l'administrateur</strong>. C'est lui qui reçoit ta demande et qui décide.
+  </div>
+
+  <div class="ob-flow">
+    <div class="ob-flow-row">
+      <div class="ob-flow-icon">🛡️</div>
+      <div class="ob-flow-text">
+        <strong>NextDNS bloque un site</strong>
+        <span>Une page sombre s'affiche à la place du site</span>
+      </div>
+    </div>
+    <div class="ob-flow-arrow">↓</div>
+    <div class="ob-flow-row">
+      <div class="ob-flow-icon">🔍</div>
+      <div class="ob-flow-text">
+        <strong>L'extension détecte la page</strong>
+        <span>Automatiquement, sans rien faire</span>
+      </div>
+    </div>
+    <div class="ob-flow-arrow">↓</div>
+    <div class="ob-flow-row">
+      <div class="ob-flow-icon">🔵</div>
+      <div class="ob-flow-text">
+        <strong>Un bouton apparaît</strong>
+        <span>"Demander le déblocage" en bas de la page</span>
+      </div>
+    </div>
+    <div class="ob-flow-arrow">↓</div>
+    <div class="ob-flow-row">
+      <div class="ob-flow-icon">📧</div>
+      <div class="ob-flow-text">
+        <strong>L'administrateur reçoit ta demande</strong>
+        <span>Par email, avec toutes les infos utiles</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ob-nav">
+    <button class="ob-btn-prev" disabled>← Précédent</button>
+    <button class="ob-btn-next" id="next-0">Suivant →</button>
+  </div>
+</div>
+
+<!-- ═══════ ÉTAPE 2 — Certificat NextDNS ═══════ -->
+<div class="ob-card" id="step-1">
+  <div class="ob-step-title">Certificat NextDNS requis 🔐</div>
+  <div class="ob-step-desc">
+    Pour que NextDNS puisse bloquer les sites <strong>sécurisés (HTTPS)</strong>
+    et afficher sa page de blocage, un certificat doit être installé sur ton appareil.
+    Sans lui, l'extension ne verra rien sur la plupart des sites.
+  </div>
+
+  <div class="ob-cert-block">
+    Ce certificat est fourni par NextDNS. Il ne s'installe pas automatiquement —
+    il faut le faire une fois sur chaque appareil.<br><br>
+    <strong>Ne t'inquiète pas</strong> : c'est une procédure normale et réversible.
+    L'extension ne peut pas vérifier si le certificat est installé ou non,
+    c'est à toi de le confirmer.
+  </div>
+
+  <div class="ob-cert-choices" id="cert-choices">
+    <button class="ob-choice-btn" id="cert-installed" type="button">
+      <span class="ob-choice-icon">✅</span>
+      <div>
+        <strong>J'ai installé le certificat</strong><br>
+        <span style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.5)">
+          Tout est prêt de ce côté
+        </span>
+      </div>
+    </button>
+    <button class="ob-choice-btn" id="cert-managed" type="button">
+      <span class="ob-choice-icon">🏢</span>
+      <div>
+        <strong>Je suis sur un réseau géré</strong><br>
+        <span style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.5)">
+          Mon entreprise ou ma famille gère ça
+        </span>
+      </div>
+    </button>
+    <button class="ob-choice-btn" id="cert-need" type="button">
+      <span class="ob-choice-icon">📥</span>
+      <div>
+        <strong>Je dois installer le certificat</strong><br>
+        <span style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.5)">
+          Ouvre la page NextDNS pour le télécharger
+        </span>
+      </div>
+    </button>
+  </div>
+
+  <div class="ob-managed-msg" id="managed-msg">
+    C'est ton admin qui s'occupe du certificat — pas besoin de le faire toi-même.
+    Il est sûrement déjà installé. Tu peux passer à l'étape suivante.
+  </div>
+
+  <div class="ob-nav">
+    <button class="ob-btn-prev" id="prev-1">← Précédent</button>
+    <button class="ob-btn-next" id="next-1">Suivant →</button>
+  </div>
+</div>
+
+<!-- ═══════ ÉTAPE 3 — Configuration endpoint ═══════ -->
+<div class="ob-card" id="step-2">
+  <div class="ob-step-title">Configurer l'envoi des demandes</div>
+  <div class="ob-step-desc">
+    Les demandes de déblocage sont envoyées via <strong>Formspree</strong>,
+    un service gratuit. L'administrateur reçoit un email pour chaque signalement.
+  </div>
+
+  <div class="ob-field">
+    <label class="ob-label" for="ob-ep">URL Formspree de l'administrateur</label>
+    <input class="ob-input" id="ob-ep" type="url"
+           placeholder="https://formspree.io/f/xxxxxxxx"
+           spellcheck="false" autocomplete="off"/>
+    <div class="ob-ep-status" id="ob-ep-status"></div>
+    <p class="ob-field-hint">
+      <strong>Si tu es l'administrateur :</strong> crée un formulaire gratuit sur
+      <a href="https://formspree.io" target="_blank">formspree.io</a> et colle l'URL ici.<br>
+      <strong>Si tu es un utilisateur :</strong> demande l'URL à ton administrateur réseau.
+    </p>
+  </div>
+
+  <div class="ob-field">
+    <label class="ob-label" for="ob-email">Ton email <span style="font-weight:400;color:var(--hint)">(facultatif — peut être configuré plus tard)</span></label>
+    <input class="ob-input" id="ob-email" type="email"
+           placeholder="votre@email.com" autocomplete="email"/>
+    <p class="ob-field-hint">Pré-rempli automatiquement dans chaque formulaire de signalement.</p>
+  </div>
+
+  <div class="ob-field">
+    <label class="ob-label" for="ob-name">Ton prénom <span style="font-weight:400;color:var(--hint)">(facultatif)</span></label>
+    <input class="ob-input" id="ob-name" type="text"
+           placeholder="Votre prénom" maxlength="60" autocomplete="given-name"/>
+  </div>
+
+  <button class="ob-save-btn" id="ob-save">Enregistrer</button>
+  <div class="ob-save-confirm" id="ob-save-confirm"></div>
+
+  <!-- FUTURE: mode webhook générique prévu en v2.0
+       Ajouter ici un sélecteur de fournisseur d'envoi :
+       - Formspree (actuel)
+       - Webhook générique (POST JSON, authentification Bearer)
+       - Power Automate / n8n / Zapier (via URL de déclencheur)
+       Chaque mode aura son propre composant de configuration.
+  -->
+  <p class="ob-future-comment">
+    💡 D'autres modes d'envoi (webhook, Power Automate…) sont prévus en
+    <code>v2.0</code>. La configuration se fera au même endroit.
+  </p>
+
+  <div class="ob-nav">
+    <button class="ob-btn-prev" id="prev-2">← Précédent</button>
+    <button class="ob-btn-next" id="next-2">Suivant →</button>
+  </div>
+</div>
+
+<!-- ═══════ ÉTAPE 4 — Prêt ═══════ -->
+<div class="ob-card" id="step-3">
+  <div class="ob-step-title">Tout est prêt ! 🎉</div>
+  <div class="ob-step-desc">
+    L'extension est configurée. La prochaine fois qu'une page NextDNS s'affichera,
+    le bouton apparaîtra automatiquement en bas de page.
+  </div>
+
+  <div class="ob-check">
+    <div class="ob-check-circle">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7"
+           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="ob-summary" id="ob-summary">
+    <!-- rempli par JS -->
+  </div>
+
+  <div class="ob-nav">
+    <button class="ob-btn-close" id="ob-close">Fermer</button>
+    <button class="ob-btn-options" id="ob-options">Paramètres complets →</button>
+  </div>
+</div>
+
+<script src="onboarding.js"></script>
+</body>
+</html>

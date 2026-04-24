@@ -121,6 +121,13 @@ input::placeholder { color:var(--hint); }
 .pill { display:inline-block; background:rgba(79,135,232,.14); color:#93b8f8; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:7px; font-weight:500; vertical-align:middle; }
 .license-box { background:rgba(255,255,255,.03); border-radius:8px; padding:14px; font-size:11px; color:var(--muted); font-family:monospace; line-height:1.9; margin-top:10px; }
 
+/* ── Historique enrichi ── */
+.history-url    { font-size:11px; color:var(--hint); margin-top:3px; max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:default; }
+.history-reason { font-size:11px; color:var(--muted); margin-top:2px; }
+.history-meta   { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; align-items:center; }
+/* Message résultat du test d'envoi */
+.test-msg { font-size:12px; margin-top:8px; min-height:14px; }
+
 /* ── Responsive mobile (< 640px) ── */
 @media (max-width: 640px) {
   .layout { flex-direction: column; }
@@ -166,7 +173,7 @@ input::placeholder { color:var(--hint); }
         <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
       </svg>
     </div>
-    <div><div class="brand-name">DNS Reporter</div><div class="brand-ver" id="opt-version">v1.3.1</div></div>
+    <div><div class="brand-name">NextDNS Reporter</div><div class="brand-ver" id="opt-version"></div></div>
   </div>
   <button class="nav-item active" data-page="settings">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -198,12 +205,13 @@ input::placeholder { color:var(--hint); }
   <div class="page-desc">Configuration de l'extension NextDNS Reporter.</div>
 
   <div class="card">
-    <div class="card-title">Endpoint Formspree</div>
+    <div class="card-title">Fournisseur d'envoi : Formspree</div>
     <div class="card-desc">
       Les signalements sont envoyés via <a href="https://formspree.io" target="_blank" style="color:#4f87e8">Formspree</a>,
       un service tiers gratuit. Créez un formulaire, puis copiez l'URL ou l'identifiant ci-dessous.
       Sans endpoint configuré, les envois sont désactivés.
     </div>
+    <!-- FUTURE: mode webhook générique prévu en v2.0 -->
     <div class="field-group">
       <label class="fl" for="opt-ep">URL ou identifiant Formspree</label>
       <input type="url" id="opt-ep" placeholder="https://formspree.io/f/xxxxxxxx" spellcheck="false" autocomplete="off"/>
@@ -247,8 +255,10 @@ input::placeholder { color:var(--hint); }
 
   <div class="btn-row">
     <button class="btn btn-primary" id="opt-save">Enregistrer les paramètres</button>
+    <button class="btn" id="opt-test">Tester l'envoi</button>
   </div>
   <div class="confirm-msg" id="opt-confirm"></div>
+  <div class="test-msg" id="opt-test-msg"></div>
 </div>
 
 <!-- ════════════ HISTORIQUE ════════════ -->
@@ -271,6 +281,20 @@ input::placeholder { color:var(--hint); }
   <div class="page-desc">Tout ce qu'il faut savoir pour utiliser NextDNS Reporter efficacement.</div>
 
   <div class="help-grid">
+
+    <div class="hcard">
+      <div class="hcard-icon">🔒</div>
+      <div class="hcard-title">Certificat NextDNS requis</div>
+      <div class="hcard-body">
+        Sans le certificat NextDNS installé dans le navigateur, une page bloquée
+        en HTTPS affiche une erreur SSL standard — <strong>pas</strong> la page de blocage
+        NextDNS. L'extension ne peut donc pas détecter le blocage ni afficher le bouton.<br><br>
+        Ce prérequis <strong>n'est pas détectable automatiquement</strong> par l'extension.
+        Si le bouton n'apparaît jamais sur les sites bloqués, commencez par installer le
+        certificat :<br><br>
+        <a href="https://nextdns.io/certificate" target="_blank">nextdns.io/certificate →</a>
+      </div>
+    </div>
 
     <div class="hcard">
       <div class="hcard-icon">🔵</div>
@@ -369,6 +393,13 @@ input::placeholder { color:var(--hint); }
     </div>
 
   </div>
+
+  <div style="text-align:right; margin-top:8px">
+    <button class="btn" id="btn-guide-link"
+      style="font-size:12px; color:var(--hint); background:none; border:none; padding:6px 10px; cursor:pointer;">
+      ↩ Revoir le guide de démarrage
+    </button>
+  </div>
 </div>
 
 <!-- ════════════ CONFIDENTIALITÉ ════════════ -->
@@ -437,6 +468,8 @@ input::placeholder { color:var(--hint); }
       <tr><td>Contexte sélectionné</td><td>Votre choix</td><td>Catégoriser la demande</td></tr>
       <tr><td>Commentaire</td><td>Saisie par vous</td><td>Explication libre (facultatif)</td></tr>
       <tr><td>Système & navigateur</td><td>User-agent</td><td>Diagnostic technique</td></tr>
+      <tr><td>Version extension</td><td><code>chrome.runtime.getManifest()</code></td><td>Diagnostic version</td></tr>
+      <tr><td>Type appareil</td><td>User-agent</td><td>Desktop ou Mobile</td></tr>
       <tr><td>Date et heure</td><td>Horloge navigateur</td><td>Horodatage</td></tr>
       <tr><td>User-Agent complet</td><td>Navigateur</td><td>Diagnostic avancé si besoin</td></tr>
     </tbody>
@@ -526,7 +559,7 @@ input::placeholder { color:var(--hint); }
       <div class="oss-icon">🛡️</div>
       <div>
         <div class="oss-name">NextDNS <span class="pill">Service</span></div>
-        <div class="oss-desc">Filtrage DNS. La page de blocage et l'API <code style="font-size:11px;color:#93b8f8">api.nextdns.io/reasons</code> sont utilisées en lecture seule, uniquement sur les pages de blocage. <a href="https://nextdns.io/privacy" target="_blank">Politique de confidentialité →</a></div>
+        <div class="oss-desc">Filtrage DNS. La page de blocage NextDNS est lue en lecture seule (DOM uniquement), uniquement lorsqu'une page de blocage est détectée. <a href="https://nextdns.io/privacy" target="_blank">Politique de confidentialité →</a></div>
       </div>
     </div>
     <div class="oss-row" style="margin-top:12px">
