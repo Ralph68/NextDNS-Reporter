@@ -208,19 +208,19 @@
       font-style: italic; font-weight: 400; text-transform: none; letter-spacing: 0;
     }
 
-    /* Tooltip */
+    /* Tooltip — expand/collapse au clic/clavier (compatible tactile, sans :hover) */
     .ndns-tip-wrap { position: relative; display: inline-flex; align-items: center; }
     .ndns-tip-icon {
       width: 15px; height: 15px; border-radius: 50%;
       background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
       color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700;
       display: inline-flex; align-items: center; justify-content: center;
-      cursor: help; user-select: none; flex: none;
-      font-style: normal; line-height: 1;
+      cursor: pointer; user-select: none; flex: none;
+      font-style: normal; line-height: 1; padding: 0; font-family: inherit;
     }
     .ndns-tip-icon:focus { outline: 2px solid #4f87e8; outline-offset: 2px; }
     .ndns-tip-bubble {
-      display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+      display: none; position: absolute; top: calc(100% + 6px); left: 50%;
       transform: translateX(-50%);
       background: #1e3a5f; border: 1px solid rgba(79,135,232,0.4);
       border-radius: 8px; padding: 8px 11px;
@@ -230,11 +230,11 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
     .ndns-tip-bubble::after {
-      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      border: 5px solid transparent; border-top-color: rgba(79,135,232,0.4);
+      content: ""; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent; border-bottom-color: rgba(79,135,232,0.4);
     }
-    .ndns-tip-wrap:hover .ndns-tip-bubble,
-    .ndns-tip-wrap:focus-within .ndns-tip-bubble { display: block; }
+    /* Affiché par classe JS — aucune dépendance au :hover ou :focus-within */
+    .ndns-tip-open .ndns-tip-bubble { display: block; }
 
     /* Inputs */
     .ndns-input {
@@ -381,24 +381,46 @@
   document.head.appendChild(style);
 
   // ─── 9. DOM ─────────────────────────────────────────────────────────────────
-  // Crée un tooltip via DOM (zéro innerHTML — exigence AMO/CSP).
-  // Les tooltips restent déclenchés au :hover/:focus-within (CSS existant).
+  // Crée un tooltip expand/collapse au clic/clavier — compatible tactile, zéro :hover.
+  let _tipCounter = 0;
   function makeTipWrap(tipText) {
+    const id   = "ndns-tip-" + (++_tipCounter);
     const wrap = document.createElement("span");
     wrap.className = "ndns-tip-wrap";
-    const icon = document.createElement("span");
+
+    const icon = document.createElement("button");
+    icon.type = "button";
     icon.className = "ndns-tip-icon";
-    icon.setAttribute("tabindex", "0");
-    icon.setAttribute("role", "tooltip");
-    icon.setAttribute("aria-label", tipText);
+    icon.setAttribute("aria-expanded", "false");
+    icon.setAttribute("aria-controls", id);
+    icon.setAttribute("aria-label", "Aide : " + tipText);
     icon.textContent = "?";
+
     const bubble = document.createElement("span");
+    bubble.id = id;
     bubble.className = "ndns-tip-bubble";
+    bubble.setAttribute("role", "tooltip");
     bubble.textContent = tipText;
+
+    icon.addEventListener("click", e => {
+      e.stopPropagation();
+      const open = wrap.classList.toggle("ndns-tip-open");
+      icon.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+
     wrap.appendChild(icon);
     wrap.appendChild(bubble);
     return wrap;
   }
+
+  // Ferme tous les tips ouverts quand on clique ailleurs
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".ndns-tip-open").forEach(w => {
+      w.classList.remove("ndns-tip-open");
+      const btn = w.querySelector(".ndns-tip-icon");
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    });
+  });
 
   const fab = document.createElement("button");
   fab.id = "ndns-fab";
