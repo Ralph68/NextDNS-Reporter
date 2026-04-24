@@ -32,7 +32,7 @@ document.getElementById("next-0").addEventListener("click", () => goTo(1));
     document.getElementById("managed-msg").style.display =
       id === "cert-managed" ? "block" : "none";
     if (id === "cert-need") {
-      window.open("https://nextdns.io/certificate", "_blank");
+      window.open("https://help.nextdns.io/t/g9hmv0a/how-to-install-and-trust-nextdns-root-ca", "_blank");
     }
   });
 });
