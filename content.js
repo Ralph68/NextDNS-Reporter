@@ -97,9 +97,9 @@
     const e = map[dom];
     return e && (Date.now() - e.ts) < BLOCK_EXPIRY_MS;
   }
-  async function markAsReported(dom) {
+  async function markAsReported(dom, extra = {}) {
     const map = await getReportedMap();
-    map[dom] = { ts: Date.now() };
+    map[dom] = { ts: Date.now(), ...extra };
     const entries = Object.entries(map).sort((a,b) => b[1].ts - a[1].ts).slice(0, 30);
     storageSet({ ndns_reported: Object.fromEntries(entries) });
   }
@@ -197,12 +197,18 @@
     return null;
   }
 
+  const directTarget  = detectLegitimateTarget();
+  const hadDirectLink = Boolean(directTarget);
+
   // ─── 9. STYLES ─────────────────────────────────────────────────────────────
   const style = document.createElement("style");
   style.textContent = `
-    #ndns-fab {
+    #ndns-fab-group {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
       z-index: 2147483640;
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    #ndns-fab {
       background: #1a56db; color: #fff; border: none; border-radius: 30px;
       padding: 13px 26px; font-size: 15px; font-weight: 500; cursor: pointer;
       box-shadow: 0 4px 20px rgba(26,86,219,0.45);
@@ -211,6 +217,19 @@
       white-space: nowrap; transition: background 0.15s, opacity 0.15s;
       min-height: 48px; min-width: 0;
     }
+    #ndns-fab-direct-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    #ndns-fab-direct {
+      background: #0e9f6e; color: #fff; border: none; border-radius: 30px;
+      padding: 13px 26px; font-size: 15px; font-weight: 500; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(14,159,110,0.4);
+      display: flex; align-items: center;
+      font-family: system-ui,-apple-system,sans-serif;
+      white-space: nowrap; transition: background 0.15s;
+      min-height: 48px;
+    }
+    #ndns-fab-direct:hover { background: #057a55; }
     #ndns-fab:hover:not(:disabled) { background: #1e40af; }
     #ndns-fab:disabled { opacity: 0.7; cursor: default; }
     #ndns-fab.ndns-already {
@@ -445,6 +464,9 @@
     @media (pointer: coarse), (max-width: 600px) {
       #ndns-fab {
         font-size: 16px; padding: 13px 24px; gap: 12px;
+      }
+      #ndns-fab-direct {
+        font-size: 16px; padding: 13px 24px;
       }
       .ndns-input {
         padding: 12px 14px;
@@ -752,7 +774,33 @@
 
   overlay.appendChild(card);
 
-  document.body.appendChild(fab);
+  // Groupe FAB : bouton direct (prioritaire, si cible détectée) + bouton signalement
+  const fabGroup = document.createElement("div");
+  fabGroup.id = "ndns-fab-group";
+
+  if (directTarget) {
+    const fabDirectRow = document.createElement("div");
+    fabDirectRow.id = "ndns-fab-direct-row";
+
+    const fabDirect = document.createElement("button");
+    fabDirect.id = "ndns-fab-direct";
+    fabDirect.type = "button";
+    fabDirect.setAttribute("aria-label", "Accéder directement à " + directTarget.hostname);
+    fabDirect.appendChild(document.createTextNode("→ Accéder directement à " + directTarget.hostname));
+    fabDirect.addEventListener("click", () => { window.location.href = directTarget.url; });
+
+    const directTip = makeTipWrap(
+      "Ce domaine bloqué est peut-être un traceur. " +
+      "Ce bouton ouvre directement le site source, sans passer par le traceur."
+    );
+
+    fabDirectRow.appendChild(fabDirect);
+    fabDirectRow.appendChild(directTip);
+    fabGroup.appendChild(fabDirectRow);
+  }
+
+  fabGroup.appendChild(fab);
+  document.body.appendChild(fabGroup);
   document.body.appendChild(overlay);
 
   // ─── 11. REFS ───────────────────────────────────────────────────────────────
@@ -1005,7 +1053,7 @@
       clearTimeout(timer);
       if (!res.ok) throw new Error("HTTP " + res.status);
 
-      await markAsReported(domain);
+      await markAsReported(domain, { hadDirectLink });
 
       // Si mémoriser cochée → persister
       persistIfChecked();
